@@ -1,0 +1,217 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import axios from '../axiosConfig';
+import { COURSE_ENDPOINTS } from '../constants/api';
+import {
+  setModules,
+  addModule,
+  updateModule,
+  removeModule,
+} from '../slices/courseSlice';
+import {
+  mockCourses,
+  mockClasses,
+  mockModules,
+  getClassesByCourseId,
+  getModulesByClassId
+} from '../mockData';
+import { mockApiService } from '../services/mockData';
+
+// Helper function to create FormData
+const createCourseFormData = (courseData) => {
+  const formData = new FormData();
+  Object.keys(courseData).forEach(key => {
+    if (courseData[key] !== null && courseData[key] !== undefined) {
+      formData.append(key, courseData[key]);
+    }
+  });
+  return formData;
+};
+
+// Fetch all courses
+export const fetchCoursesThunk = createAsyncThunk(
+  'course/fetchCourses',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(COURSE_ENDPOINTS.COURSES);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+// Fetch course by id
+export const fetchCourseByIdThunk = createAsyncThunk(
+  'course/fetchCourseById',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(COURSE_ENDPOINTS.COURSE_DETAIL(id));
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+// Create new course
+export const createCourseThunk = createAsyncThunk(
+  'course/createCourse',
+  async (courseData, { rejectWithValue }) => {
+    try {
+      const formData = createCourseFormData(courseData);
+      const response = await axios.post(COURSE_ENDPOINTS.COURSES, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+// Update course
+export const updateCourseThunk = createAsyncThunk(
+  'course/updateCourse',
+  async ({ id, courseData }, { rejectWithValue }) => {
+    try {
+      const formData = createCourseFormData(courseData);
+      // FormData doesn't support PUT in all browsers/servers, so we use POST with a _method field.
+      // However, since the API spec explicitly uses PUT, we'll try that first.
+      // If the backend expects a multipart form, it should handle PUT correctly.
+      const response = await axios.put(COURSE_ENDPOINTS.COURSE_DETAIL(id), formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+// Delete course
+export const deleteCourseThunk = createAsyncThunk(
+  'course/deleteCourse',
+  async (id, { rejectWithValue }) => {
+    try {
+      await axios.delete(COURSE_ENDPOINTS.COURSE_DETAIL(id));
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+// Class Thunks
+export const fetchClasses = createAsyncThunk(
+  'course/fetchClasses',
+  async (courseId, { rejectWithValue }) => {
+    try {
+      const response = await mockApiService.getClasses();
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const createClass = createAsyncThunk(
+  'course/createClass',
+  async ({ courseId, classData }, { rejectWithValue }) => {
+    try {
+      const response = await mockApiService.createClass(courseId, classData);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const updateClassThunk = createAsyncThunk(
+  'course/updateClass',
+  async ({ id, classData }, { rejectWithValue }) => {
+    try {
+      const response = await mockApiService.updateClass(id, classData);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const deleteClass = createAsyncThunk(
+  'course/deleteClass',
+  async (id, { rejectWithValue }) => {
+    try {
+      await mockApiService.deleteClass(id);
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Module Thunks
+export const fetchModules = createAsyncThunk(
+  'course/fetchModules',
+  async (classId, { rejectWithValue }) => {
+    try {
+      const response = await mockApiService.getModulesByClassId(classId);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const createModule = createAsyncThunk(
+  'course/createModule',
+  async ({ classId, moduleData }, { rejectWithValue }) => {
+    try {
+      const response = await mockApiService.createModule(classId, moduleData);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const updateModuleThunk = createAsyncThunk(
+  'course/updateModule',
+  async ({ id, moduleData }, { rejectWithValue }) => {
+    try {
+      const response = await mockApiService.updateModule(id, moduleData);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const deleteModule = createAsyncThunk(
+  'course/deleteModule',
+  async (id, { rejectWithValue }) => {
+    try {
+      await mockApiService.deleteModule(id);
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Fetch classes by course id
+export const fetchClassesByCourseId = createAsyncThunk(
+  'course/fetchClassesByCourseId',
+  async (courseId, { rejectWithValue }) => {
+    try {
+      const response = await mockApiService.getClassesByCourseId(courseId);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+); 
