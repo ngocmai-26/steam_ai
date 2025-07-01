@@ -4,10 +4,10 @@ import { setCurrentLesson } from '../slices/courseSlice';
 import { openModal } from '../slices/modalSlice';
 
 const selectClassDetail = state => ({
-  currentClass: state.course.currentClass,
-  currentCourse: state.course.currentCourse,
-  students: state.course.currentClass?.students || [],
-  lessons: state.course.currentClass?.lessons || []
+  currentClass: state.class.selectedClass || state.modal.data?.class,
+  currentCourse: state.modal.data?.course,
+  students: state.class.selectedClass?.students || state.modal.data?.class?.students || [],
+  lessons: state.class.selectedClass?.lessons || state.modal.data?.class?.lessons || []
 });
 
 const ClassDetail = () => {
@@ -100,86 +100,58 @@ const ClassDetail = () => {
     }).join('\n');
   };
 
-  if (!currentClass || !currentCourse) {
-    return null;
+  // Helper functions to get data from different possible structures
+  const getDisplayName = (user) => {
+    if (!user) return '';
+    if (typeof user === 'string') return user;
+    if (typeof user === 'object') return user.name || user.email || String(user.id || '');
+    return '';
+  };
+
+  const getTeacher = (cls) => getDisplayName(cls.teacher);
+  const getAssistant = (cls) => getDisplayName(cls.teaching_assistant);
+  const getStudentCount = (cls) => cls.student_count ?? 0;
+  const getStatus = (cls) => {
+    if (cls.is_active === false) return 'Ngừng hoạt động';
+    if (cls.status === 'completed') return 'Đã hoàn thành';
+    return 'Đang hoạt động';
+  };
+
+  if (!currentClass) {
+    return (
+      <div className="p-6">
+        <div className="text-center text-gray-500">
+          Không tìm thấy thông tin lớp học
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <div className="text-sm text-gray-500 mb-1">
-            {currentCourse.name}
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{currentClass.name}</h2>
-          <p className="text-gray-600">{currentClass.description}</p>
-        </div>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{currentClass.name}</h2>
+        {currentClass.description && (
+          <p className="text-gray-600 mb-2">{currentClass.description}</p>
+        )}
+        {currentCourse && (
+          <div className="text-sm text-gray-500 mb-1">Khóa học: {currentCourse.name}</div>
+        )}
       </div>
-
-      {currentClass.thumbnail && (
-        <div className="mb-8">
-          <img 
-            src={currentClass.thumbnail} 
-            alt={currentClass.name}
-            className="w-full h-48 object-cover rounded-lg"
-          />
-        </div>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Thông tin lớp học</h3>
           <div className="space-y-3 text-sm">
-            <p className="flex items-center">
-              <span className="font-medium w-32">Mã khóa học:</span>
-              <span>{currentCourse?.code || 'N/A'}</span>
-            </p>
-            <p className="flex items-center">
-              <span className="font-medium w-32">Tên khóa học:</span>
-              <span>{currentCourse?.name || 'N/A'}</span>
-            </p>
-            <p className="flex items-center">
-              <span className="font-medium w-32">Mã lớp:</span>
-              <span>{currentClass.code || 'N/A'}</span>
-            </p>
-            <p className="flex items-center">
-              <span className="font-medium w-32">Giáo viên:</span>
-              <span>{currentClass.teacher || 'Chưa phân công'}</span>
-            </p>
-            {currentClass.teaching_assistant && (
-              <p className="flex items-center">
-                <span className="font-medium w-32">Trợ giảng:</span>
-                <span>{currentClass.teaching_assistant}</span>
-              </p>
-            )}
-            <p className="flex items-center">
-              <span className="font-medium w-32">Sĩ số tối đa:</span>
-              <span>{currentClass.max_students || 0} học sinh</span>
-            </p>
-            <p className="flex items-center">
-              <span className="font-medium w-32">Thời gian:</span>
-              <span>{currentClass.start_date || 'N/A'} - {currentClass.end_date || 'N/A'}</span>
-            </p>
-            <p className="flex items-center">
-              <span className="font-medium w-32">Phòng học:</span>
-              <span>{currentClass.room || 'Chưa phân phòng'}</span>
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Lịch học</h3>
-          <div className="space-y-2">
-            {currentClass.schedule ? (
-              <div className="grid gap-2">
-                {formatSchedule(currentClass.schedule).split('\n').map((scheduleItem, index) => (
-                  <div key={index} className="flex items-center py-2 border-b border-gray-100 last:border-0">
-                    <span className="text-sm text-gray-900">{scheduleItem}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 italic">Chưa có lịch học</p>
+            <p><span className="font-medium">Mã lớp:</span> {currentClass.id}</p>
+            <p><span className="font-medium">Tên lớp:</span> {currentClass.name}</p>
+            <p><span className="font-medium">Giáo viên:</span> {getTeacher(currentClass)}</p>
+            <p><span className="font-medium">Trợ giảng:</span> {getAssistant(currentClass)}</p>
+            <p><span className="font-medium">Số học viên:</span> {getStudentCount(currentClass)}/{currentClass.max_students || 'Không giới hạn'}</p>
+            <p><span className="font-medium">Thời gian:</span> {currentClass.start_date ? new Date(currentClass.start_date).toLocaleDateString('vi-VN') : 'N/A'} - {currentClass.end_date ? new Date(currentClass.end_date).toLocaleDateString('vi-VN') : 'N/A'}</p>
+            <p><span className="font-medium">Trạng thái:</span> {getStatus(currentClass)}</p>
+            <p><span className="font-medium">Tổng số buổi học:</span> {currentClass.total_sessions ?? 0}</p>
+            {currentClass.schedule && (
+              <p><span className="font-medium">Lịch học:</span> <span className="whitespace-pre-line">{typeof currentClass.schedule === 'string' ? currentClass.schedule : JSON.stringify(currentClass.schedule, null, 2)}</span></p>
             )}
           </div>
         </div>
@@ -187,7 +159,9 @@ const ClassDetail = () => {
 
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-900">Danh sách học sinh ({students.length}/{currentClass.max_students})</h3>
+          <h3 className="text-xl font-semibold text-gray-900">
+            Danh sách học sinh ({students.length}/{currentClass.max_students || '∞'})
+          </h3>
           <button
             onClick={handleAddStudent}
             className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -197,76 +171,109 @@ const ClassDetail = () => {
         </div>
 
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Họ tên</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số điện thoại</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {students.map(student => (
-                <tr key={student.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{student.first_name} {student.last_name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{student.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{student.phone}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleEditStudent(student)}
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                      Chỉnh sửa
-                    </button>
-                  </td>
+          {students.length > 0 ? (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Học sinh
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Số điện thoại
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ngày đăng ký
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Thao tác
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {students.map((student) => (
+                  <tr key={student.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <img
+                            className="h-10 w-10 rounded-full"
+                            src={student.avatar || 'https://via.placeholder.com/40x40?text=U'}
+                            alt=""
+                          />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {student.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {student.student_id || 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {student.email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {student.phone || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {student.enrolled_at ? new Date(student.enrolled_at).toLocaleDateString('vi-VN') : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => handleEditStudent(student)}
+                        className="text-indigo-600 hover:text-indigo-900 mr-3"
+                      >
+                        Sửa
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              Chưa có học sinh nào đăng ký lớp học này
+            </div>
+          )}
         </div>
       </div>
 
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-900">Danh sách bài học ({lessons.length})</h3>
-          <button
-            onClick={handleAddLesson}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Thêm Học Phần
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {lessons.map(lesson => (
-            <div
-              key={lesson.id}
-              onClick={() => handleViewLesson(lesson)}
-              className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-200"
+      {lessons && lessons.length > 0 && (
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold text-gray-900">Danh sách bài học</h3>
+            <button
+              onClick={handleAddLesson}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              <div className="p-4">
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                  Bài {lesson.sequence_number}: {lesson.name}
-                </h4>
-                <p className="text-gray-600 text-sm mb-4">{lesson.description}</p>
-                <div className="text-sm text-gray-500">
-                  <p><span className="font-medium">Thời lượng:</span> {lesson.duration} phút</p>
-                  <p><span className="font-medium">Tài liệu:</span> {lesson.materials?.length || 0}</p>
+              Thêm bài học
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {lessons.map((lesson) => (
+              <div
+                key={lesson.id}
+                className="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handleViewLesson(lesson)}
+              >
+                <h4 className="font-medium text-gray-900 mb-2">{lesson.name}</h4>
+                <p className="text-sm text-gray-600 mb-2">{lesson.description}</p>
+                <div className="text-xs text-gray-500">
+                  Thời lượng: {lesson.duration || 'N/A'}
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
-export default React.memo(ClassDetail); 
+export default ClassDetail; 

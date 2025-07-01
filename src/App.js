@@ -1,24 +1,24 @@
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-
 import AppRoutes from './routes';
-import Modal from './components/Modal';
-import { checkAuth } from './middleware/authMiddleware';
+import ModalManager from './components/ModalManager';
+import Toast from './components/Toast';
+import { checkAuthThunk } from './thunks/AuthThunks';
+import './App.css';
 
 function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(checkAuth());
+    // Check for existing authentication when the app loads
+    dispatch(checkAuthThunk());
   }, [dispatch]);
 
   return (
     <>
-      <ToastContainer />
       <AppRoutes />
-      <Modal />
+      <ModalManager />
+      <Toast />
     </>
   );
 }

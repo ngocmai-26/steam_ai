@@ -32,9 +32,19 @@ const Navbar = () => {
       icon: '🏫'
     },
     {
+      to: '/modules',
+      label: 'Quản lý học phần',
+      icon: '🧩'
+    },
+    {
+      to: '/lessons',
+      label: 'Quản lý buổi học',
+      icon: '📅'
+    },
+    {
       to: '/evaluations',
-      label: 'Đánh giá buổi học',
-      icon: '📝'
+      label: 'Đánh giá học viên',
+      icon: '⭐'
     },
     {
       to: '/attendance',

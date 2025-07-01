@@ -1,22 +1,31 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LessonService } from '../../services/LessonService';
 
 const LessonEvaluationList = () => {
   const navigate = useNavigate();
+  const [evaluations, setEvaluations] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data for evaluations
-  const evaluations = [
-    {
-      id: 1,
-      class_name: 'Python-01',
-      date: '15/03/2024',
-      focus_score: 5,
-      punctuality_score: 4,
-      interaction_score: 5,
-      comment: 'Buổi học rất hữu ích'
-    },
-    // Add more mock evaluations here
-  ];
+  useEffect(() => {
+    const fetchEvaluations = async () => {
+      setLoading(true);
+      try {
+        const data = await LessonService.getLessonEvaluations();
+        console.log('API /back-office/lesson-evaluations result:', data);
+        setEvaluations(data || []);
+      } catch (err) {
+        console.error('Error fetching lesson evaluations:', err);
+        setEvaluations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvaluations();
+  }, []);
+
+  if (loading) return <div className="p-6 text-center">Đang tải đánh giá...</div>;
+  if (!evaluations.length) return <div className="p-6 text-center">Không có dữ liệu đánh giá nào.</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -38,7 +47,7 @@ const LessonEvaluationList = () => {
                 Lớp học
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ngày
+                Ngày học
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Tập trung
@@ -58,22 +67,34 @@ const LessonEvaluationList = () => {
             {evaluations.map((evaluation) => (
               <tr key={evaluation.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {evaluation.class_name}
+                  {typeof evaluation.class_name === 'object' ? JSON.stringify(evaluation.class_name) : (evaluation.class_name || evaluation.className || '')}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {evaluation.date}
+                  {typeof evaluation.lesson_date === 'object' ? JSON.stringify(evaluation.lesson_date) : (evaluation.lesson_date || evaluation.date || '')}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {evaluation.focus_score}/5
+                  {typeof evaluation.focus_score === 'object'
+                    ? JSON.stringify(evaluation.focus_score)
+                    : evaluation.focus_score
+                      ? `${evaluation.focus_score}/5`
+                      : ''}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {evaluation.punctuality_score}/5
+                  {typeof evaluation.punctuality_score === 'object'
+                    ? JSON.stringify(evaluation.punctuality_score)
+                    : evaluation.punctuality_score
+                      ? `${evaluation.punctuality_score}/5`
+                      : ''}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {evaluation.interaction_score}/5
+                  {typeof evaluation.interaction_score === 'object'
+                    ? JSON.stringify(evaluation.interaction_score)
+                    : evaluation.interaction_score
+                      ? `${evaluation.interaction_score}/5`
+                      : ''}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {evaluation.comment}
+                  {typeof evaluation.comment === 'object' ? JSON.stringify(evaluation.comment) : (evaluation.comment || '')}
                 </td>
               </tr>
             ))}

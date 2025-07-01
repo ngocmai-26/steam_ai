@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addStudent, updateStudent } from '../slices/studentSlice';
+import { addStudentAsync, updateStudentAsync } from '../slices/studentSlice';
 import { closeModal, openModal } from '../slices/modalSlice';
 
 const StudentForm = ({ type, onSuccess }) => {
@@ -25,6 +25,8 @@ const StudentForm = ({ type, onSuccess }) => {
     is_active: true
   });
 
+  const [avatarFile, setAvatarFile] = useState(null);
+
   useEffect(() => {
     if (isEditing && currentStudent) {
       setFormData({
@@ -48,21 +50,23 @@ const StudentForm = ({ type, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     try {
-      if (isEditing) {
-        const studentData = {
-          ...formData,
-          id: currentStudent.id
-        };
-        await dispatch(updateStudent(studentData)).unwrap();
-        dispatch(closeModal());
-      } else {
-        const result = await dispatch(addStudent(formData)).unwrap();
-        // Sau khi thêm học viên thành công, chỉ đóng modal, không mở modal đăng ký lớp nữa
-        dispatch(closeModal());
+      let submitData = { ...formData };
+      // Nếu có file avatar, gửi dưới dạng FormData
+      if (avatarFile) {
+        const fd = new FormData();
+        Object.entries(formData).forEach(([key, value]) => {
+          fd.append(key, value);
+        });
+        fd.append('avatar', avatarFile);
+        submitData = fd;
       }
-      
+      if (isEditing) {
+        await dispatch(updateStudentAsync({ id: currentStudent.id, studentData: submitData })).unwrap();
+      } else {
+        await dispatch(addStudentAsync(submitData)).unwrap();
+      }
+      dispatch(closeModal());
       if (onSuccess) {
         onSuccess(formData);
       }
@@ -82,8 +86,7 @@ const StudentForm = ({ type, onSuccess }) => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Normally you would upload this to a server and get back a URL
-      // For now, we'll just create a local URL
+      setAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData(prev => ({

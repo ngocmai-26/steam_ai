@@ -2,7 +2,7 @@
  * API configuration constants
  */
 export const API = {
-    uri: "https://cds.bdu.edu.vn/apis",
+    uri: "https://bdu-steam.onrender.com/steam/apis",
   };
   
   /**
@@ -12,16 +12,35 @@ export const API = {
   export const REFRESH_KEY_NAME = "refresh";
   export const INFO_KEY_NAME = "info";
   
-export const API_BASE_URL = 'https://bdu-steam.onrender.com';
+export const API_BASE_URL = 'https://bdu-steam.onrender.com/steam/apis';
 
 export const AUTH_ENDPOINTS = {
-  SESSION: `${API_BASE_URL}/steam/apis/app/auth/session`,
-  TOKEN: `${API_BASE_URL}/steam/apis/back-office/auth/token`,
-  VERIFY: `${API_BASE_URL}/steam/apis/back-office/auth/verify`,
+  SESSION: `${API_BASE_URL}/app/auth/session`,
+  TOKEN: `${API_BASE_URL}/back-office/auth/token`,
+  VERIFY: `${API_BASE_URL}/back-office/auth/verify`,
 };
 
 export const COURSE_ENDPOINTS = {
-  COURSES: `${API_BASE_URL}/steam/apis/back-office/courses`,
-  COURSE_DETAIL: (id) => `${API_BASE_URL}/steam/apis/back-office/courses/${id}`,
+  COURSES: `${API_BASE_URL}/back-office/courses`,
+  COURSE_DETAIL: (id) => `${API_BASE_URL}/back-office/courses/${id}`,
+};
+
+export const CLASS_ENDPOINTS = {
+  CLASSES: `${API_BASE_URL}/back-office/classes`,
+  CLASS_DETAIL: (id) => `${API_BASE_URL}/back-office/classes/${id}`,
+};
+
+export const MODULE_ENDPOINTS = {
+    MODULES: `${API_BASE_URL}/back-office/course-modules`,
+    MODULE_DETAIL: (id) => `${API_BASE_URL}/back-office/course-modules/${id}`,
+};
+
+export const USER_ENDPOINTS = {
+  CREATE_ROOT_USER: `${API_BASE_URL}/back-office/root/users`,
+};
+
+export const LESSON_ENDPOINTS = {
+  LESSONS: `${API_BASE_URL}/back-office/lessons`,
+  LESSON_DETAIL: (id) => `${API_BASE_URL}/back-office/lessons/${id}`,
 };
   

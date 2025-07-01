@@ -1,18 +1,50 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { mockStudents } from '../mockData/students';
+import { StudentService } from '../services/StudentService';
 
 // Async thunk for fetching students
 export const fetchStudents = createAsyncThunk(
   'student/fetchStudents',
   async () => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return mockStudents;
+    const data = await StudentService.getStudents();
+    return data;
+  }
+);
+
+export const addStudentAsync = createAsyncThunk(
+  'student/addStudent',
+  async (studentData) => {
+    const data = await StudentService.createStudent(studentData);
+    return data;
+  }
+);
+
+export const updateStudentAsync = createAsyncThunk(
+  'student/updateStudent',
+  async ({ id, studentData }) => {
+    const data = await StudentService.updateStudent(id, studentData);
+    return data;
+  }
+);
+
+export const deleteStudentAsync = createAsyncThunk(
+  'student/deleteStudent',
+  async (id) => {
+    await StudentService.deleteStudent(id);
+    return id;
+  }
+);
+
+export const fetchStudentDetail = createAsyncThunk(
+  'student/fetchStudentDetail',
+  async (id) => {
+    const data = await StudentService.getStudentById(id);
+    return data;
   }
 );
 
 const initialState = {
-  students: mockStudents,
+  students: [],
   currentStudent: null,
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null
@@ -86,13 +118,13 @@ const studentSlice = createSlice({
       
       if (studentIndex !== -1) {
         const student = state.students[studentIndex];
-        
+        // Đảm bảo registrations là mảng
+        const registrations = Array.isArray(student.registrations) ? student.registrations : [];
         // Find and update the registration status
-        const registration = student.registrations.find(reg => reg.class_id === classId);
+        const registration = registrations.find(reg => reg.class_id === classId);
         if (registration) {
           registration.status = 'inactive';
         }
-
         // Update current student if it's the same student
         if (state.currentStudent?.id === studentId) {
           state.currentStudent = student;
@@ -112,6 +144,21 @@ const studentSlice = createSlice({
       .addCase(fetchStudents.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message;
+      })
+      .addCase(addStudentAsync.fulfilled, (state, action) => {
+        state.students.push(action.payload);
+      })
+      .addCase(updateStudentAsync.fulfilled, (state, action) => {
+        const index = state.students.findIndex(s => s.id === action.payload.id);
+        if (index !== -1) {
+          state.students[index] = action.payload;
+        }
+      })
+      .addCase(deleteStudentAsync.fulfilled, (state, action) => {
+        state.students = state.students.filter(s => s.id !== action.payload);
+      })
+      .addCase(fetchStudentDetail.fulfilled, (state, action) => {
+        state.currentStudent = action.payload;
       });
   }
 });

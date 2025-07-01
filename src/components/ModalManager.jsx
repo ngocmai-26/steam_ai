@@ -7,11 +7,17 @@ import ClassDetail from './ClassDetail';
 import LessonDetail from './LessonDetail';
 import ClassForm from './ClassForm';
 import LessonForm from './LessonForm';
+import ModuleForm from './ModuleForm';
 import StudentForm from './StudentForm';
 import StudentClassRegistration from './StudentClassRegistration';
+import ModuleManager from './ModuleManager';
+import { useDispatch as useReduxDispatch } from 'react-redux';
+import { fetchStudents } from '../slices/studentSlice';
+import { useSelector as useReduxSelector } from 'react-redux';
 
 const ModalManager = () => {
   const dispatch = useDispatch();
+  const reduxDispatch = useReduxDispatch();
   const { isOpen, type, data } = useSelector(state => state.modal);
 
   if (!isOpen) {
@@ -50,6 +56,10 @@ const ModalManager = () => {
       case 'addClass':
       case 'editClass':
         return <ClassForm type={type} />;
+      // Module management
+      case 'addModule':
+      case 'editModule':
+        return <ModuleForm />;
       // Lesson management
       case 'viewLesson':
         return <LessonDetail />;
@@ -59,9 +69,39 @@ const ModalManager = () => {
       // Student management
       case 'addStudent':
       case 'editStudent':
-        return <StudentForm type={type} />;
+        return <StudentForm type={type} onSuccess={() => reduxDispatch(fetchStudents())} />;
       case 'registerClass':
         return <StudentClassRegistration />;
+      case 'manageModules':
+        return <ModuleManager />;
+      case 'viewStudent': {
+        // Hiển thị chi tiết học viên, có thể tái sử dụng StudentForm ở chế độ readOnly
+        const student = useReduxSelector(state => state.student.currentStudent);
+        if (!student) return <div className="p-6">Đang tải...</div>;
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-4">Chi tiết học viên</h2>
+            <div className="flex gap-6">
+              {student.avatar_url && (
+                <img src={student.avatar_url} alt="avatar" className="h-24 w-24 rounded-full object-cover" />
+              )}
+              <div>
+                <div><b>Mã học viên:</b> {student.identification_number}</div>
+                <div><b>Họ tên:</b> {student.first_name} {student.last_name}</div>
+                <div><b>Ngày sinh:</b> {student.date_of_birth}</div>
+                <div><b>Giới tính:</b> {student.gender}</div>
+                <div><b>Địa chỉ:</b> {student.address}</div>
+                <div><b>SĐT:</b> {student.phone_number}</div>
+                <div><b>Email:</b> {student.email}</div>
+                <div><b>Phụ huynh:</b> {student.parent_name} - {student.parent_phone}</div>
+                <div><b>Email phụ huynh:</b> {student.parent_email}</div>
+                <div><b>Ghi chú:</b> {student.note}</div>
+                <div><b>Trạng thái:</b> {student.is_active ? 'Đang hoạt động' : 'Không hoạt động'}</div>
+              </div>
+            </div>
+          </div>
+        );
+      }
       default:
         return null;
     }

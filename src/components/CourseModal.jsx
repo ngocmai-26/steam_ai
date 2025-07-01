@@ -11,8 +11,10 @@ const CourseModal = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    price: '',
+    duration: '',
     thumbnail: null,
-    status: 'active'
+    is_active: true,
   });
 
   useEffect(() => {
@@ -20,8 +22,10 @@ const CourseModal = () => {
       setFormData({
         name: selectedCourse.name || '',
         description: selectedCourse.description || '',
-        thumbnail: selectedCourse.thumbnail || null,
-        status: selectedCourse.status || 'active'
+        price: selectedCourse.price || '',
+        duration: selectedCourse.duration || '',
+        thumbnail: null,
+        is_active: selectedCourse.is_active || false,
       });
     }
   }, [selectedCourse, type]);
@@ -29,11 +33,19 @@ const CourseModal = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Parse các trường không bắt buộc: nếu là chuỗi rỗng thì chuyển thành null
+    const parsedData = {
+      ...formData,
+      description: formData.description.trim() === '' ? null : formData.description,
+      price: formData.price === '' ? null : formData.price,
+      duration: formData.duration === '' ? null : formData.duration,
+      // thumbnail giữ nguyên vì đã là null nếu không chọn
+    };
     try {
       if (type === 'edit') {
-        await dispatch(updateCourseThunk({ id: selectedCourse.id, courseData: formData })).unwrap();
+        await dispatch(updateCourseThunk({ id: selectedCourse.id, courseData: parsedData })).unwrap();
       } else {
-        await dispatch(createCourseThunk(formData)).unwrap();
+        await dispatch(createCourseThunk(parsedData)).unwrap();
       }
       dispatch(closeModal());
     } catch (error) {
@@ -95,18 +107,45 @@ const CourseModal = () => {
           />
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Giá (VNĐ)
+            </label>
+            <input
+              type="number"
+              name="price"
+              value={formData.price}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Thời lượng (phút)
+            </label>
+            <input
+              type="number"
+              name="duration"
+              value={formData.duration}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Trạng thái
           </label>
           <select
-            name="status"
-            value={formData.status}
+            name="is_active"
+            value={formData.is_active}
             onChange={handleChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           >
-            <option value="active">Đang hoạt động</option>
-            <option value="inactive">Không hoạt động</option>
+            <option value={true}>Đang hoạt động</option>
+            <option value={false}>Không hoạt động</option>
           </select>
         </div>
 

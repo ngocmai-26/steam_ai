@@ -1,6 +1,7 @@
 import { setUser, logout, setLoading, setError } from '../slices/authSlice'
 import axios from '../axiosConfig'
 import { AUTH_ENDPOINTS } from '../constants/api'
+import { setAlert } from '../slices/alertSlice';
 
 // Fake account for testing
 const FAKE_ACCOUNT = {
@@ -11,25 +12,56 @@ const FAKE_ACCOUNT = {
   email: 'admin@example.com'
 };
 
+// Helper to manage user info in localStorage
+const storeUserInfo = (userInfo) => {
+  localStorage.setItem('userInfo', JSON.stringify(userInfo));
+};
+
+const clearUserInfo = () => {
+  localStorage.removeItem('userInfo');
+};
+
+const getUserInfo = () => {
+  const userInfo = localStorage.getItem('userInfo');
+  return userInfo ? JSON.parse(userInfo) : null;
+};
+
+const getErrorMessage = (error) => {
+    const message = error.response?.data?.message || error.response?.data?.detail || error.message;
+    if (error.response?.data?.data) {
+        const dataErrors = Object.entries(error.response.data.data)
+            .map(([key, value]) => `${key}: ${value.join(', ')}`)
+            .join('; ');
+        return `${message}: ${dataErrors}`;
+    }
+    return message;
+}
+
 export const loginThunk = ({ email, password }) => async (dispatch) => {
   dispatch(setLoading(true));
   try {
     const response = await axios.post(AUTH_ENDPOINTS.TOKEN, { email, password });
-    const { access, refresh, user, verification_required } = response.data;
-
-    if (verification_required) {
-      return { verificationRequired: true, email };
-    }
+    const { access, refresh, user_info, verification_required } = response.data.data;
 
     localStorage.setItem('token', access);
     localStorage.setItem('refreshToken', refresh);
-    dispatch(setUser(user));
+    storeUserInfo(user_info);
+
+    if (verification_required) {
+      dispatch(setUser(user_info));
+      dispatch(setAlert({ message: 'Yêu cầu xác thực OTP', type: 'info' }));
+      return { verificationRequired: true, email: user_info.email };
+    }
+
+    dispatch(setUser(user_info));
+    dispatch(setAlert({ message: 'Đăng nhập thành công!', type: 'success' }));
     return { verificationRequired: false };
 
   } catch (error) {
-    const errorMessage = error.response?.data?.detail || error.message || 'Login failed';
-    dispatch(setError(errorMessage));
-    throw new Error(errorMessage);
+    const message = getErrorMessage(error);
+    dispatch(setAlert({ message, type: 'error' }));
+    dispatch(setError(message));
+    throw new Error(message);
   }
 };
 
@@ -37,16 +69,19 @@ export const verifyThunk = ({ email, otp }) => async (dispatch) => {
     dispatch(setLoading(true));
     try {
         const response = await axios.post(AUTH_ENDPOINTS.VERIFY, { email, otp });
-        const { access, refresh, user } = response.data;
+        const { access, refresh, user } = response.data.data;
 
         localStorage.setItem('token', access);
         localStorage.setItem('refreshToken', refresh);
+        storeUserInfo(user);
         dispatch(setUser(user));
+        dispatch(setAlert({ message: 'Xác thực thành công!', type: 'success' }));
 
     } catch (error) {
-        const errorMessage = error.response?.data?.detail || error.message || 'Verification failed';
-        dispatch(setError(errorMessage));
-        throw new Error(errorMessage);
+        const message = getErrorMessage(error);
+        dispatch(setAlert({ message, type: 'error' }));
+        dispatch(setError(message));
+        throw new Error(message);
     }
 }
 
@@ -54,7 +89,9 @@ export const logoutThunk = () => (dispatch) => {
   try {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
+    clearUserInfo();
     dispatch(logout());
+    dispatch(setAlert({ message: 'Đã đăng xuất', type: 'info' }));
   } catch (error) {
     console.error('Logout error:', error);
   }
@@ -62,15 +99,15 @@ export const logoutThunk = () => (dispatch) => {
 
 export const checkAuthThunk = () => (dispatch) => {
   const token = localStorage.getItem('token');
-  if (token) {
-    // Here you should ideally verify the token with your backend
-    // For now, we'll just assume the token is valid if it exists
-    // You might want to decode the token to get user info
-    // const decoded = jwt_decode(token);
-    // dispatch(setUser(decoded));
-    // This is just a placeholder:
-    dispatch(setUser({
-      // You should fetch user info from backend or decode from token
-    }));
+  const userInfo = getUserInfo();
+
+  if (token && userInfo) {
+    dispatch(setUser(userInfo));
+  } else {
+    // If token or user info is missing, treat as logged out
+    dispatch(logout());
+    clearUserInfo();
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
   }
 };

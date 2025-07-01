@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import EvaluationForm from './EvaluationForm';
+import LessonEvaluationForm from './LessonEvaluationForm';
+import { useSelector } from 'react-redux';
+import { ClassService } from '../../services/ClassService';
+import { StudentService } from '../../services/StudentService';
+import { LessonService } from '../../services/LessonService';
+import axios from '../../axiosConfig';
+import { MODULE_ENDPOINTS, USER_ENDPOINTS } from '../../constants/api';
 
 const EvaluationFlow = ({ onBack: parentOnBack }) => {
   const navigate = useNavigate();
@@ -9,81 +15,109 @@ const EvaluationFlow = ({ onBack: parentOnBack }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedModule, setSelectedModule] = useState(null);
   const [selectedLesson, setSelectedLesson] = useState(null);
+  const [classes, setClasses] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [lessons, setLessons] = useState([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [loadingModules, setLoadingModules] = useState(false);
+  const [loadingLessons, setLoadingLessons] = useState(false);
+  const [userCache, setUserCache] = useState({});
+  const [users, setUsers] = useState([]);
 
-  // Mock data - Thay thế bằng API call thực tế sau này
-  const classes = [
-    {
-      id: 1,
-      name: 'Python-01',
-      teacher: 'John Doe',
-      schedule: 'Thứ 2, 4, 6',
-      totalStudents: 15,
-      activeStudents: 12
-    },
-    {
-      id: 2,
-      name: 'Web Development-01',
-      teacher: 'Jane Smith',
-      schedule: 'Thứ 3, 5, 7',
-      totalStudents: 20,
-      activeStudents: 18
-    }
-  ];
+  const user = useSelector(state => state.auth.user);
+  console.log('User:', user);
 
-  const students = [
-    {
-      id: 1,
-      classId: 1,
-      name: 'Nguyễn Văn A',
-      email: 'nguyenvana@example.com',
-      phone: '0123456789',
-      status: 'active'
-    },
-    {
-      id: 2,
-      classId: 1,
-      name: 'Trần Thị B',
-      email: 'tranthib@example.com',
-      phone: '0987654321',
-      status: 'active'
-    }
-  ];
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const res = await ClassService.getClasses();
+        // Nếu API trả về { data: [...] }
+        const classList = Array.isArray(res) ? res : res.data || [];
+        setClasses(classList);
+      } catch (err) {
+        setClasses([]);
+      }
+    };
+    fetchClasses();
+  }, []);
 
-  const modules = [
-    {
-      id: 1,
-      name: 'Cơ bản về Python',
-      description: 'Giới thiệu về ngôn ngữ lập trình Python',
-      duration: '4 tuần',
-      lessons: 12
-    },
-    {
-      id: 2,
-      name: 'Lập trình hướng đối tượng với Python',
-      description: 'OOP trong Python',
-      duration: '3 tuần',
-      lessons: 9
+  const filteredClasses = classes.filter(classItem => {
+    // So sánh teacher
+    let teacherMatch = false;
+    if (classItem.teacher) {
+      if (typeof classItem.teacher === 'object') {
+        teacherMatch = classItem.teacher.id === user.id;
+      } else {
+        teacherMatch = classItem.teacher === user.id;
+      }
     }
-  ];
+    // So sánh teaching_assistant
+    let assistantMatch = false;
+    if (classItem.teaching_assistant) {
+      if (typeof classItem.teaching_assistant === 'object') {
+        assistantMatch = classItem.teaching_assistant.id === user.id;
+      } else {
+        assistantMatch = classItem.teaching_assistant === user.id;
+      }
+    }
+    return teacherMatch || assistantMatch;
+  });
 
-  const lessons = [
-    {
-      id: 1,
-      moduleId: 1,
-      name: 'Giới thiệu Python',
-      description: 'Tổng quan về Python và cài đặt môi trường',
-      duration: '3 giờ',
-      sequence: 1
-    },
-    {
-      id: 2,
-      moduleId: 1,
-      name: 'Biến và kiểu dữ liệu',
-      description: 'Các kiểu dữ liệu cơ bản trong Python',
-      duration: '3 giờ',
-      sequence: 2
-    }
-  ];
+  // Fetch toàn bộ user khi load component
+  useEffect(() => {
+    axios.get('/back-office/root/users')
+      .then(res => setUsers(Array.isArray(res.data?.data) ? res.data.data : []))
+      .catch(() => setUsers([]));
+  }, []);
+
+  // Hàm lấy email hoặc tên từ id
+  const getUserInfo = (id) => {
+    if (!id) return 'Không có';
+    const user = users.find(u => u.id === id);
+    return user?.email || user?.name || 'Không có';
+  };
+
+  // Fetch students & modules when selectedClass changes
+  useEffect(() => {
+    if (!selectedClass) return;
+    // Fetch students
+    setLoadingStudents(true);
+    StudentService.getStudents()
+      .then(data => {
+        // Lọc học viên thuộc lớp này
+        const filtered = Array.isArray(data)
+          ? data.filter(s => {
+            // Có thể cần kiểm tra s.registrations
+            if (!Array.isArray(s.registrations)) return false;
+            return s.registrations.some(r => r.class_id === selectedClass.id && r.status === 'active');
+          })
+          : [];
+        setStudents(filtered);
+      })
+      .catch(() => setStudents([]))
+      .finally(() => setLoadingStudents(false));
+    // Fetch modules
+    setLoadingModules(true);
+    axios.get(`${MODULE_ENDPOINTS.MODULES}?class_room=${selectedClass.id}`)
+      .then(res => setModules(Array.isArray(res.data.data) ? res.data.data : []))
+      .catch(() => setModules([]))
+      .finally(() => setLoadingModules(false));
+  }, [selectedClass]);
+
+  // Fetch lessons when selectedModule changes
+  useEffect(() => {
+    if (!selectedModule) return;
+    setLoadingLessons(true);
+    LessonService.getLessons(selectedModule.id)
+      .then(res => {
+        // API trả về res.data hoặc res.data.data
+        let lessonArr = Array.isArray(res) ? res : (Array.isArray(res.data) ? res.data : res.data?.data || []);
+        setLessons(lessonArr);
+      })
+      .catch(() => setLessons([]))
+      .finally(() => setLoadingLessons(false));
+  }, [selectedModule]);
 
   const handleBack = () => {
     switch (step) {
@@ -111,6 +145,7 @@ const EvaluationFlow = ({ onBack: parentOnBack }) => {
         }
     }
   };
+  console.log('filteredClasses', filteredClasses)
 
   const handleSubmitEvaluation = (formData) => {
     // TODO: Submit evaluation data to backend
@@ -130,119 +165,128 @@ const EvaluationFlow = ({ onBack: parentOnBack }) => {
 
   const renderClassList = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {classes.map((classItem) => (
-        <div
-          key={classItem.id}
-          onClick={() => {
-            setSelectedClass(classItem);
-            setStep('students');
-          }}
-          className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
-        >
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            {classItem.name}
-          </h3>
-          <div className="space-y-2 text-gray-600">
-            <p>
-              <span className="font-medium">Giảng viên:</span> {classItem.teacher}
-            </p>
-            <p>
-              <span className="font-medium">Lịch học:</span> {classItem.schedule}
-            </p>
-            <p>
-              <span className="font-medium">Học viên:</span>{' '}
-              {classItem.activeStudents}/{classItem.totalStudents}
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderStudentList = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {students
-        .filter(
-          (student) =>
-            student.classId === selectedClass?.id && student.status === 'active'
-        )
-        .map((student) => (
+      {filteredClasses.length === 0 ? (
+        <div className="col-span-full text-center text-gray-500">Bạn không có quyền đánh giá lớp nào.</div>
+      ) : filteredClasses.map((classItem) => {
+        // Đếm số học viên thực tế
+        const studentCount = Array.isArray(classItem.students) ? classItem.students.length : 0;
+        return (
           <div
-            key={student.id}
+            key={classItem.id}
             onClick={() => {
-              setSelectedStudent(student);
-              setStep('modules');
+              setSelectedClass(classItem);
+              setStep('students');
             }}
             className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
           >
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              {student.name}
+              {classItem.name}
             </h3>
             <div className="space-y-2 text-gray-600">
               <p>
-                <span className="font-medium">Email:</span> {student.email}
-              </p>
-              <p>
-                <span className="font-medium">SĐT:</span> {student.phone}
+                <span className="font-medium">Học viên:</span>{' '}
+                {studentCount}
               </p>
             </div>
           </div>
-        ))}
+        );
+      })}
+    </div>
+  );
+  console.log('students', loadingStudents)
+  filteredClasses.map((classItem) => {
+    console.log('classItem:', classItem);
+  })
+
+
+  const renderStudentList = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {loadingStudents ? (
+        <div className="col-span-full text-center text-gray-500">Đang tải học viên...</div>
+      ) : (Array.isArray(students) && students.length > 0 ? (
+        students
+          .map((student) => (
+            <div
+              key={student.id}
+              onClick={() => {
+                setSelectedStudent(student);
+                setStep('modules');
+              }}
+              className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+            >
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                {student.name}
+              </h3>
+              <div className="space-y-2 text-gray-600">
+                <p>
+                  <span className="font-medium">Email:</span> {student.email}
+                </p>
+                <p>
+                  <span className="font-medium">SĐT:</span> {student.phone}
+                </p>
+              </div>
+            </div>
+          ))
+      ) : <div className="col-span-full text-center text-gray-500">Không có học viên nào.</div>)}
     </div>
   );
 
   const renderModuleList = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {modules.map((module) => (
-        <div
-          key={module.id}
-          onClick={() => {
-            setSelectedModule(module);
-            setStep('lessons');
-          }}
-          className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
-        >
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            {module.name}
-          </h3>
-          <div className="space-y-2 text-gray-600">
-            <p>{module.description}</p>
-            <p>
-              <span className="font-medium">Thời lượng:</span> {module.duration}
-            </p>
-            <p>
-              <span className="font-medium">Số buổi học:</span> {module.lessons}
-            </p>
+      {loadingModules ? (
+        <div className="col-span-full text-center text-gray-500">Đang tải học phần...</div>
+      ) : (Array.isArray(modules) && modules.length > 0 ? (
+        modules.map((module) => (
+          <div
+            key={module.id}
+            onClick={() => {
+              setSelectedModule(module);
+              setStep('lessons');
+            }}
+            className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+          >
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {module.name}
+            </h3>
+            <div className="space-y-2 text-gray-600">
+              <p>{module.description}</p>
+              <p>
+                <span className="font-medium">Số buổi học:</span> {module.total_lessons || module.lessons}
+              </p>
+            </div>
           </div>
-        </div>
-      ))}
+        ))
+      ) : <div className="col-span-full text-center text-gray-500">Không có học phần nào.</div>)}
     </div>
   );
 
   const renderLessonList = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {lessons
-        .filter((lesson) => lesson.moduleId === selectedModule?.id)
-        .map((lesson) => (
-          <div
-            key={lesson.id}
-            onClick={() => {
-              setSelectedLesson(lesson);
-              setStep('evaluation');
-            }}
-            className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
-          >
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Buổi {lesson.sequence}: {lesson.name}
-            </h3>
-            <div className="space-y-2 text-gray-600">
-              <p>{lesson.description}</p>
-              <p>
-                <span className="font-medium">Thời lượng:</span> {lesson.duration}
-              </p>
+      {loadingLessons ? (
+        <div className="col-span-full text-center text-gray-500">Đang tải buổi học...</div>
+      ) : (Array.isArray(lessons) && lessons.length > 0 ? (
+        lessons
+          .map((lesson) => (
+            <div
+              key={lesson.id}
+              onClick={() => {
+                setSelectedLesson(lesson);
+                setStep('evaluation');
+              }}
+              className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+            >
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Buổi {lesson.sequence_number || lesson.sequence}: {lesson.name}
+              </h3>
+              <div className="space-y-2 text-gray-600">
+                <p>{lesson.description}</p>
+                <p>
+                  <span className="font-medium">Thời lượng:</span> {lesson.duration}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+      ) : <div className="col-span-full text-center text-gray-500">Không có buổi học nào.</div>)}
     </div>
   );
 
@@ -292,7 +336,7 @@ const EvaluationFlow = ({ onBack: parentOnBack }) => {
       {step === 'modules' && renderModuleList()}
       {step === 'lessons' && renderLessonList()}
       {step === 'evaluation' && (
-        <EvaluationForm
+        <LessonEvaluationForm
           classInfo={selectedClass}
           student={selectedStudent}
           module={selectedModule}

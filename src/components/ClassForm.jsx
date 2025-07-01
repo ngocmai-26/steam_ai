@@ -1,297 +1,308 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { closeModal } from '../slices/courseSlice';
-import { addClassToCourse, updateClassInCourse } from '../slices/courseSlice';
+import { closeModal } from '../slices/modalSlice';
+import { createClass, updateClassThunk } from '../thunks/classThunks';
+import { fetchCoursesThunk } from '../thunks/courseThunks';
+import { setAlert } from '../slices/alertSlice';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+import ClassService from '../services/ClassService';
+import axios from '../axiosConfig';
 
-const ClassForm = ({ type }) => {
-  const dispatch = useDispatch();
-  const courses = useSelector(state => state.course.courses);
-  const currentCourse = useSelector(state => state.course.currentCourse);
-  const currentClass = useSelector(state => state.course.currentClass);
-  const isEditing = type === 'editClass';
-
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    thumbnail: null,
-    course: '',
-    teacher: '',
-    teaching_assistant: '',
-    max_students: 30,
-    start_date: '',
-    end_date: '',
-    schedule: ''
-  });
-
-  const [thumbnailPreview, setThumbnailPreview] = useState(null);
-
-  useEffect(() => {
-    if (currentCourse) {
-      setFormData(prev => ({
-        ...prev,
-        course: currentCourse.id
-      }));
-    }
-
-    if (isEditing && currentClass) {
-      setFormData({
-        name: currentClass.name || '',
-        description: currentClass.description || '',
-        thumbnail: currentClass.thumbnail || null,
-        course: currentCourse?.id || '',
-        teacher: currentClass.teacher || '',
-        teaching_assistant: currentClass.teaching_assistant || '',
-        max_students: currentClass.max_students || 30,
-        start_date: currentClass.start_date || '',
-        end_date: currentClass.end_date || '',
-        schedule: currentClass.schedule || ''
-      });
-
-      if (currentClass.thumbnail) {
-        setThumbnailPreview(currentClass.thumbnail);
-      }
-    }
-  }, [isEditing, currentClass, currentCourse]);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
+const ClassForm = () => {
+    const dispatch = useDispatch();
+    const { type, data } = useSelector((state) => state.modal);
+    const { courses } = useSelector((state) => state.course);
     
-    const classData = {
-      ...formData,
-      id: isEditing ? currentClass.id : Date.now().toString(),
-      course: parseInt(formData.course),
-      teacher: formData.teacher ? parseInt(formData.teacher) : null,
-      teaching_assistant: formData.teaching_assistant ? parseInt(formData.teaching_assistant) : null,
-      max_students: parseInt(formData.max_students)
+    const isEditing = type === 'editClass';
+    const currentClass = data?.class;
+    const currentCourse = data?.course;
+
+    // Debug log để kiểm tra giá trị khi mở form
+    console.log('ClassForm debug:', { type, data, isEditing, currentClass });
+
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        course: '', 
+        teacher: '', 
+        teaching_assistant: '', 
+        max_students: '',
+        start_date: null,
+        end_date: null,
+        schedule: '',
+    });
+
+    const [errors, setErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [teachers, setTeachers] = useState([]);
+    
+    useEffect(() => {
+        if (!courses.length) {
+            dispatch(fetchCoursesThunk());
+        }
+        // Fetch teachers (dùng chung cho cả giáo viên và trợ giảng)
+        axios.get('/back-office/users', { params: { role: 'teacher' } })
+          .then(res => {
+            const users = Array.isArray(res.data) ? res.data : res.data.data || [];
+            setTeachers(users);
+          })
+          .catch(() => setTeachers([]));
+    }, [dispatch, courses.length]);
+
+    useEffect(() => {
+        if (isEditing && currentClass) {
+            setFormData({
+                name: currentClass.name || '',
+                description: currentClass.description || '',
+                course: String(currentClass.course?.id || currentClass.course || currentCourse?.course_id || currentCourse?.id || ''),
+                teacher: currentClass.teacher || '',
+                teaching_assistant: currentClass.teaching_assistant || '',
+                max_students: currentClass.max_students || '',
+                start_date: currentClass.start_date ? new Date(currentClass.start_date) : null,
+                end_date: currentClass.end_date ? new Date(currentClass.end_date) : null,
+                schedule: typeof currentClass.schedule === 'string' 
+                    ? currentClass.schedule 
+                    : JSON.stringify(currentClass.schedule || {}, null, 2),
+            });
+        } else if (!isEditing && currentCourse) {
+            setFormData(prev => ({ ...prev, course: String(currentCourse.id), }));
+        }
+    }, [isEditing, currentClass, currentCourse]);
+
+    // Helper ép mọi lỗi về string
+    const toStringErrors = (errs) => {
+        const result = {};
+        for (const key in errs) {
+            result[key] = typeof errs[key] === 'string' ? errs[key] : JSON.stringify(errs[key]);
+        }
+        return result;
     };
 
-    if (isEditing) {
-      dispatch(updateClassInCourse({
-        courseId: formData.course,
-        classData
-      }));
-    } else {
-      dispatch(addClassToCourse({
-        courseId: formData.course,
-        classData
-      }));
-    }
+    const validateForm = () => {
+        const validation = ClassService.validateClassData(formData);
+        setErrors(toStringErrors(validation.errors));
+        return validation.isValid;
+    };
 
-    dispatch(closeModal());
-  };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        
+        if (!validateForm()) {
+            return;
+        }
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+        setIsSubmitting(true);
+        setErrors({});
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData(prev => ({
-        ...prev,
-        thumbnail: file
-      }));
+        try {
+            // Format data using service
+            const formattedData = ClassService.formatClassData(formData);
+            if (isEditing) {
+                console.log("isEditing", isEditing)
+                console.log("formattedData", formattedData)
+                console.log("currentClass", currentClass)
+                 await dispatch(updateClassThunk({ id: currentClass.id, classData: formattedData })).unwrap();
+            } else {
+                await dispatch(createClass(formattedData)).unwrap();
+            }
+            
+            dispatch(fetchCoursesThunk()); // Refresh courses to show updated class counts
+            dispatch(closeModal());
+        } catch (error) {
+            console.error('Failed to save class:', error);
+            dispatch(setAlert({ message: 'Có lỗi xảy ra khi lưu lớp học', type: 'error' }));
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setThumbnailPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        console.log("name", name)
+        setFormData(prev => ({ ...prev, [name]: value }));
+        
+        // Clear error when user starts typing
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: '' }));
+        }
+    };
 
-  return (
-    <div className="bg-white p-6 rounded-lg max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
-        {isEditing ? 'Chỉnh sửa lớp học' : 'Thêm lớp học mới'}
-      </h2>
+    console.log('Teachers:', teachers);
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Khóa học
-            </label>
-            <select
-              name="course"
-              value={formData.course}
-              onChange={handleChange}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              required
-              disabled={isEditing}
-            >
-              <option value="">Chọn khóa học</option>
-              {courses.map(course => (
-                <option key={course.id} value={course.id}>
-                  {course.name}
-                </option>
-              ))}
-            </select>
-          </div>
+    return (
+        <div className="bg-white p-6 rounded-lg max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                {isEditing ? 'Chỉnh sửa lớp học' : 'Thêm lớp học mới'}
+            </h2>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tên lớp học
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-              />
-            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Khóa học <span className="text-red-500">*</span></label>
+                    <select
+                        name="course"
+                        value={formData.course}
+                        onChange={handleChange}
+                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                            errors.course ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        required
+                        disabled={isEditing || !!currentCourse}
+                    >
+                        <option value="">Chọn khóa học</option>
+                        {courses.map(courseItem => (
+                            <option key={courseItem.id} value={String(courseItem.id)}>
+                                {courseItem.name}
+                            </option>
+                        ))}
+                    </select>
+                    {errors.course && <p className="mt-1 text-sm text-red-600">{String(errors.course)}</p>}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Tên lớp học <span className="text-red-500">*</span></label>
+                        <input 
+                            type="text" 
+                            name="name" 
+                            value={formData.name} 
+                            onChange={handleChange} 
+                            required 
+                            className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                                errors.name ? 'border-red-300' : 'border-gray-300'
+                            }`}
+                        />
+                        {errors.name && <p className="mt-1 text-sm text-red-600">{String(errors.name)}</p>}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Số học viên tối đa</label>
+                        <input 
+                            type="number" 
+                            name="max_students" 
+                            value={formData.max_students} 
+                            onChange={handleChange} 
+                            min="1" 
+                            className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                                errors.max_students ? 'border-red-300' : 'border-gray-300'
+                            }`}
+                        />
+                        {errors.max_students && <p className="mt-1 text-sm text-red-600">{String(errors.max_students)}</p>}
+                    </div>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Số học viên tối đa
-              </label>
-              <input
-                type="number"
-                name="max_students"
-                value={formData.max_students}
-                onChange={handleChange}
-                min="1"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-              />
-            </div>
-          </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Mô tả</label>
+                    <textarea 
+                        name="description" 
+                        value={formData.description} 
+                        onChange={handleChange} 
+                        rows="3" 
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
+                    />
+                </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mô tả
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows="3"
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Giáo viên</label>
+                        <select
+                            name="teacher"
+                            value={formData.teacher}
+                            onChange={handleChange}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            required
+                        >
+                            <option value="">Chọn giáo viên</option>
+                            {teachers.map(t => (
+                                <option key={t.id} value={String(t.id)}>
+                                    {[
+                                        typeof t.name === 'string' ? t.name : null,
+                                        typeof t.email === 'string' ? t.email : null
+                                    ].filter(Boolean).join(' - ') || String(t.id)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Trợ giảng</label>
+                        <select
+                            name="teaching_assistant"
+                            value={formData.teaching_assistant}
+                            onChange={handleChange}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            <option value="">Chọn trợ giảng</option>
+                            {teachers.map(t => (
+                                <option key={t.id} value={String(t.id)}>
+                                    {[
+                                        typeof t.name === 'string' ? t.name : null,
+                                        typeof t.email === 'string' ? t.email : null
+                                    ].filter(Boolean).join(' - ') || String(t.id)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ảnh đại diện
-            </label>
-            <div className="mt-1 flex items-center space-x-4">
-              <input
-                type="file"
-                name="thumbnail"
-                onChange={handleFileChange}
-                accept="image/*"
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              />
-              {thumbnailPreview && (
-                <img 
-                  src={thumbnailPreview} 
-                  alt="Thumbnail preview" 
-                  className="h-20 w-20 object-cover rounded-md"
-                />
-              )}
-            </div>
-          </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Ngày bắt đầu <span className="text-red-500">*</span></label>
+                        <DatePicker
+                            selected={formData.start_date}
+                            onChange={(date) => setFormData(prev => ({ ...prev, start_date: date }))}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            dateFormat="dd/MM/yyyy"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Ngày kết thúc <span className="text-red-500">*</span></label>
+                        <DatePicker
+                            selected={formData.end_date}
+                            onChange={(date) => setFormData(prev => ({ ...prev, end_date: date }))}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            dateFormat="dd/MM/yyyy"
+                            minDate={formData.start_date}
+                            required
+                        />
+                        {errors.end_date && <p className="mt-1 text-sm text-red-600">{String(errors.end_date)}</p>}
+                    </div>
+                </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Giáo viên
-              </label>
-              <input
-                type="number"
-                name="teacher"
-                value={formData.teacher}
-                onChange={handleChange}
-                min="1"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Lịch học (JSON)</label>
+                    <textarea
+                        name="schedule"
+                        value={formData.schedule}
+                        onChange={handleChange}
+                        rows="3"
+                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm ${
+                            errors.schedule ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        placeholder='{"monday": "18:30-20:30", "wednesday": "18:30-20:30"}'
+                    />
+                    {errors.schedule && <p className="mt-1 text-sm text-red-600">{String(errors.schedule)}</p>}
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Trợ giảng
-              </label>
-              <input
-                type="number"
-                name="teaching_assistant"
-                value={formData.teaching_assistant}
-                onChange={handleChange}
-                min="1"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ngày bắt đầu
-              </label>
-              <input
-                type="date"
-                name="start_date"
-                value={formData.start_date}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ngày kết thúc
-              </label>
-              <input
-                type="date"
-                name="end_date"
-                value={formData.end_date}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Lịch học (JSON)
-            </label>
-            <textarea
-              name="schedule"
-              value={formData.schedule}
-              onChange={handleChange}
-              rows="3"
-              placeholder='Ví dụ: {"monday": "18:30-20:30", "wednesday": "18:30-20:30", "friday": "18:30-20:30"}'
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-mono text-sm"
-            />
-          </div>
+                <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                        type="button"
+                        onClick={() => dispatch(closeModal())}
+                        className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        disabled={isSubmitting}
+                    >
+                        Hủy
+                    </button>
+                    <button
+                        type="submit"
+                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? 'Đang lưu...' : (isEditing ? 'Cập nhật' : 'Thêm mới')}
+                    </button>
+                </div>
+            </form>
         </div>
-
-        <div className="flex justify-end space-x-3 pt-6">
-          <button
-            type="button"
-            onClick={() => dispatch(closeModal())}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            {isEditing ? 'Cập nhật' : 'Thêm mới'}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
+    );
 };
 
 export default ClassForm; 

@@ -39,19 +39,19 @@ const CourseDetail = () => {
         </div>
         <div className="flex items-center space-x-4">
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            currentCourse.status === 'active' 
-              ? 'bg-green-100 text-green-800' 
+            currentCourse.is_active
+              ? 'bg-green-100 text-green-800'
               : 'bg-red-100 text-red-800'
           }`}>
-            {currentCourse.status === 'active' ? 'Đang hoạt động' : 'Không hoạt động'}
+            {currentCourse.is_active ? 'Đang hoạt động' : 'Không hoạt động'}
           </span>
         </div>
       </div>
 
-      {currentCourse.thumbnail && (
+      {(currentCourse.thumbnail_url || currentCourse.thumbnail) && (
         <div className="mb-8">
           <img 
-            src={currentCourse.thumbnail} 
+            src={currentCourse.thumbnail_url || currentCourse.thumbnail} 
             alt={currentCourse.name}
             className="w-full h-48 object-cover rounded-lg"
           />

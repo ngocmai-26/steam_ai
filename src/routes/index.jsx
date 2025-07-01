@@ -1,10 +1,13 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import PrivateRoute from '../components/PrivateRoute';
+import RoleBasedRoute from '../components/RoleBasedRoute';
 
 // Public pages
 import Login from '../pages/Login';
 import Verification from '../pages/Verification';
+import Home from '../pages/Home';
+import CreateUser from '../pages/CreateUser';
 
 // Private pages
 import Dashboard from '../pages/Dashboard';
@@ -14,6 +17,8 @@ import Classes from '../pages/Classes';
 import Evaluations from '../pages/Evaluations';
 import Attendance from '../pages/Attendance';
 import Accounts from '../pages/Accounts';
+import Modules from '../pages/Modules';
+import Lessons from '../pages/Lessons';
 
 // Layouts
 import MainLayout from '../layouts/MainLayout';
@@ -29,25 +34,24 @@ const AppRoutes = () => {
       </Route>
 
       {/* Private Routes */}
-      <Route
-        element={
-          <PrivateRoute>
-            <MainLayout />
-          </PrivateRoute>
-        }
-      >
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/students" element={<Students />} />
-        <Route path="/courses" element={<Courses />} />
-        <Route path="/classes" element={<Classes />} />
-        <Route path="/evaluations" element={<Evaluations />} />
-        <Route path="/attendance" element={<Attendance />} />
-        <Route path="/accounts" element={<Accounts />} />
-      </Route>
+      <Route element={<PrivateRoute><MainLayout /></PrivateRoute>}>
+        {/* Entry point after login, redirects based on role */}
+        <Route path="/" element={<Home />} />
+        
+        {/* Manager-only routes */}
+        <Route path="/dashboard" element={<RoleBasedRoute allowedRoles={['manager']}><Dashboard /></RoleBasedRoute>} />
+        <Route path="/students" element={<RoleBasedRoute allowedRoles={['manager','teacher']}><Students /></RoleBasedRoute>} />
+        <Route path="/courses" element={<RoleBasedRoute allowedRoles={['manager']}><Courses /></RoleBasedRoute>} />
+        <Route path="/classes" element={<RoleBasedRoute allowedRoles={['manager','teacher']}><Classes /></RoleBasedRoute>} />
+        <Route path="/modules" element={<RoleBasedRoute allowedRoles={['manager','teacher']}><Modules /></RoleBasedRoute>} />
+        <Route path="/evaluations" element={<RoleBasedRoute allowedRoles={['manager','teacher']}><Evaluations /></RoleBasedRoute>} />
+        <Route path="/attendance" element={<RoleBasedRoute allowedRoles={['manager','teacher']}><Attendance /></RoleBasedRoute>} />
+        <Route path="/accounts" element={<RoleBasedRoute allowedRoles={['manager']}><Accounts /></RoleBasedRoute>} />
+        <Route path="/lessons" element={<RoleBasedRoute allowedRoles={['manager','teacher']}><Lessons /></RoleBasedRoute>} />
 
-      {/* Catch all route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Root-only routes */}
+        <Route path="/create-user" element={<RoleBasedRoute allowedRoles={['root']}><CreateUser /></RoleBasedRoute>} />
+      </Route>
     </Routes>
   );
 };

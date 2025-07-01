@@ -2,12 +2,14 @@ import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import Table from '../components/Table';
 import { openModal } from '../slices/modalSlice';
-import { setCurrentStudent, deleteStudent, fetchStudents } from '../slices/studentSlice';
+import { setCurrentStudent, fetchStudents, addStudentAsync, updateStudentAsync, deleteStudentAsync, fetchStudentDetail } from '../slices/studentSlice';
 import ModalManager from '../components/ModalManager';
 
 const Students = () => {
   const dispatch = useDispatch();
   const { students = [], status, error } = useSelector((state) => state.student || {});
+  const user = useSelector(state => state.auth.user);
+  const role = user?.role;
 
   useEffect(() => {
     if (status === 'idle') {
@@ -99,50 +101,65 @@ const Students = () => {
       key: 'actions',
       render: (_, record) => (
         <div className="flex space-x-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRegisterClass(record);
-            }}
-            className="text-blue-600 hover:text-blue-900"
-          >
-            Đăng ký lớp
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEditStudent(record);
-            }}
-            className="text-indigo-600 hover:text-indigo-900"
-          >
-            Sửa
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteStudent(record.id);
-            }}
-            className="text-red-600 hover:text-red-900"
-          >
-            Xóa
-          </button>
+          {role === 'manager' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRegisterClass(record);
+              }}
+              className="text-blue-600 hover:text-blue-900"
+            >
+              Đăng ký lớp
+            </button>
+          )}
+          {role === 'manager' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditStudent(record);
+              }}
+              className="text-indigo-600 hover:text-indigo-900"
+            >
+              Sửa
+            </button>
+          )}
+          {role === 'manager' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteStudent(record.id);
+              }}
+              className="text-red-600 hover:text-red-900"
+            >
+              Xóa
+            </button>
+          )}
         </div>
       ),
     },
   ];
 
-  const handleAddStudent = () => {
-    dispatch(openModal({ type: 'addStudent' }));
+  const handleAddStudent = (studentData) => {
+    dispatch(addStudentAsync(studentData));
   };
 
   const handleEditStudent = (student) => {
-    dispatch(setCurrentStudent(student));
+    dispatch(fetchStudentDetail(student.id));
     dispatch(openModal({ type: 'editStudent' }));
+  };
+
+  const handleRowClick = (student) => {
+    dispatch(fetchStudentDetail(student.id));
+    dispatch(openModal({ type: 'viewStudent' }));
+  };
+
+  const handleUpdateStudent = (id, studentData) => {
+    dispatch(updateStudentAsync({ id, studentData }));
   };
 
   const handleDeleteStudent = (studentId) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa học viên này?')) {
-      dispatch(deleteStudent(studentId));
+      dispatch(deleteStudentAsync(studentId));
     }
   };
 
@@ -154,22 +171,34 @@ const Students = () => {
     }));
   };
 
+  // Lọc danh sách học sinh theo role
+  const filteredStudents = role === 'teacher'
+    ? students.filter(student => {
+        // student.class_room có thể là object hoặc id
+        if (!student.class_room) return false;
+        const classObj = typeof student.class_room === 'object' ? student.class_room : null;
+        return classObj && (classObj.teacher?.id === user.id || classObj.teacher === user.id);
+      })
+    : students;
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Danh sách học viên</h1>
-        <button
-          onClick={handleAddStudent}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
-          Thêm học viên mới
-        </button>
+        {role === 'manager' && (
+          <button
+            onClick={() => dispatch(openModal({ type: 'addStudent' }))}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Thêm học viên mới
+          </button>
+        )}
       </div>
 
       <Table
         columns={columns}
-        data={students}
-        onRowClick={handleEditStudent}
+        data={filteredStudents}
+        onRowClick={handleRowClick}
       />
       
       <ModalManager />

@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { createClass, fetchClasses, updateClassThunk, deleteClassThunk } from '../thunks/classThunks';
+import { createClass, fetchClasses, fetchClassById, updateClassThunk, deleteClassThunk } from '../thunks/classThunks';
 
 const initialState = {
   classes: [],
@@ -8,6 +8,7 @@ const initialState = {
   isModalOpen: false,
   modalType: 'add', // 'add' or 'edit'
   selectedClass: null,
+  data: null, // To pass extra data to modal
 };
 
 const classSlice = createSlice({
@@ -18,11 +19,13 @@ const classSlice = createSlice({
       state.isModalOpen = true;
       state.modalType = action.payload.type || 'add';
       state.selectedClass = action.payload.class || null;
+      state.data = action.payload.data || null;
     },
     closeModal: (state) => {
       state.isModalOpen = false;
       state.modalType = 'add';
       state.selectedClass = null;
+      state.data = null;
     },
   },
   extraReducers: (builder) => {
@@ -38,7 +41,7 @@ const classSlice = createSlice({
       })
       .addCase(createClass.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message;
+        state.error = action.payload;
       })
 
     // Fetch classes
@@ -53,7 +56,22 @@ const classSlice = createSlice({
       })
       .addCase(fetchClasses.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message;
+        state.error = action.payload;
+      })
+
+    // Fetch class by ID
+    builder
+      .addCase(fetchClassById.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchClassById.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.selectedClass = action.payload;
+      })
+      .addCase(fetchClassById.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
       })
 
     // Update class
@@ -71,7 +89,7 @@ const classSlice = createSlice({
       })
       .addCase(updateClassThunk.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message;
+        state.error = action.payload;
       })
 
     // Delete class
@@ -86,7 +104,7 @@ const classSlice = createSlice({
       })
       .addCase(deleteClassThunk.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message;
+        state.error = action.payload;
       });
   },
 });

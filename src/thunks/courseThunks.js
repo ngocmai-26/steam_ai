@@ -15,6 +15,7 @@ import {
   getModulesByClassId
 } from '../mockData';
 import { mockApiService } from '../services/mockData';
+import { setAlert } from '../slices/alertSlice';
 
 // Helper function to create FormData
 const createCourseFormData = (courseData) => {
@@ -27,15 +28,28 @@ const createCourseFormData = (courseData) => {
   return formData;
 };
 
+const getErrorMessage = (error) => {
+    const message = error.response?.data?.message || error.response?.data?.detail || error.message;
+    if (error.response?.data?.data) {
+        const dataErrors = Object.entries(error.response.data.data)
+            .map(([key, value]) => `${key}: ${value.join(', ')}`)
+            .join('; ');
+        return `${message}: ${dataErrors}`;
+    }
+    return message;
+}
+
 // Fetch all courses
 export const fetchCoursesThunk = createAsyncThunk(
   'course/fetchCourses',
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
       const response = await axios.get(COURSE_ENDPOINTS.COURSES);
-      return response.data;
+      return response.data.data || [];
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      const message = getErrorMessage(error);
+      dispatch(setAlert({ message, type: 'error' }));
+      return rejectWithValue(message);
     }
   }
 );
@@ -43,12 +57,14 @@ export const fetchCoursesThunk = createAsyncThunk(
 // Fetch course by id
 export const fetchCourseByIdThunk = createAsyncThunk(
   'course/fetchCourseById',
-  async (id, { rejectWithValue }) => {
+  async (id, { dispatch, rejectWithValue }) => {
     try {
       const response = await axios.get(COURSE_ENDPOINTS.COURSE_DETAIL(id));
-      return response.data;
+      return response.data.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      const message = getErrorMessage(error);
+      dispatch(setAlert({ message, type: 'error' }));
+      return rejectWithValue(message);
     }
   }
 );
@@ -56,7 +72,7 @@ export const fetchCourseByIdThunk = createAsyncThunk(
 // Create new course
 export const createCourseThunk = createAsyncThunk(
   'course/createCourse',
-  async (courseData, { rejectWithValue }) => {
+  async (courseData, { dispatch, rejectWithValue }) => {
     try {
       const formData = createCourseFormData(courseData);
       const response = await axios.post(COURSE_ENDPOINTS.COURSES, formData, {
@@ -64,9 +80,12 @@ export const createCourseThunk = createAsyncThunk(
           'Content-Type': 'multipart/form-data',
         },
       });
-      return response.data;
+      dispatch(setAlert({ message: 'Tạo khóa học thành công!', type: 'success' }));
+      return response.data.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      const message = getErrorMessage(error);
+      dispatch(setAlert({ message, type: 'error' }));
+      return rejectWithValue(message);
     }
   }
 );
@@ -74,20 +93,20 @@ export const createCourseThunk = createAsyncThunk(
 // Update course
 export const updateCourseThunk = createAsyncThunk(
   'course/updateCourse',
-  async ({ id, courseData }, { rejectWithValue }) => {
+  async ({ id, courseData }, { dispatch, rejectWithValue }) => {
     try {
       const formData = createCourseFormData(courseData);
-      // FormData doesn't support PUT in all browsers/servers, so we use POST with a _method field.
-      // However, since the API spec explicitly uses PUT, we'll try that first.
-      // If the backend expects a multipart form, it should handle PUT correctly.
       const response = await axios.put(COURSE_ENDPOINTS.COURSE_DETAIL(id), formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      return response.data;
+      dispatch(setAlert({ message: 'Cập nhật khóa học thành công!', type: 'success' }));
+      return response.data.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      const message = getErrorMessage(error);
+      dispatch(setAlert({ message, type: 'error' }));
+      return rejectWithValue(message);
     }
   }
 );
@@ -95,12 +114,15 @@ export const updateCourseThunk = createAsyncThunk(
 // Delete course
 export const deleteCourseThunk = createAsyncThunk(
   'course/deleteCourse',
-  async (id, { rejectWithValue }) => {
+  async (id, { dispatch, rejectWithValue }) => {
     try {
       await axios.delete(COURSE_ENDPOINTS.COURSE_DETAIL(id));
+      dispatch(setAlert({ message: 'Xóa khóa học thành công!', type: 'success' }));
       return id;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      const message = getErrorMessage(error);
+      dispatch(setAlert({ message, type: 'error' }));
+      return rejectWithValue(message);
     }
   }
 );

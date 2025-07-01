@@ -44,9 +44,14 @@ const Courses = () => {
   }
 
   if (error) {
+    const errorMessage = typeof error === 'object' && error !== null && error.detail
+      ? error.detail
+      : typeof error === 'string'
+      ? error
+      : 'Đã có lỗi xảy ra.';
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500">Error: {error}</div>
+        <div className="text-red-500">Error: {errorMessage}</div>
       </div>
     );
   }
@@ -64,15 +69,15 @@ const Courses = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses.map(course => (
+        {Array.isArray(courses) && courses.map(course => (
           <div
             key={course.id}
             onClick={() => handleViewCourse(course)}
             className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-200"
           >
-            {course.thumbnail && (
+            {(course.thumbnail_url || course.thumbnail) && (
               <img
-                src={course.thumbnail}
+                src={course.thumbnail_url || course.thumbnail}
                 alt={course.name}
                 className="w-full h-48 object-cover"
               />
@@ -91,18 +96,19 @@ const Courses = () => {
                 </button>
               </div>
               <p className="text-gray-600 text-sm mb-4">{course.description}</p>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-gray-500 space-y-1">
                 <p><span className="font-medium">Mã khóa học:</span> {course.code}</p>
-                <p><span className="font-medium">Thời lượng:</span> {course.duration} giờ</p>
+                <p><span className="font-medium">Giá:</span> {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.price || 0)}</p>
+                <p><span className="font-medium">Thời lượng:</span> {course.duration} phút</p>
                 <p><span className="font-medium">Số lớp học:</span> {course.classes?.length || 0}</p>
-                <p>
+                <p className="flex items-center">
                   <span className="font-medium">Trạng thái:</span>
-                  <span className={`ml-1 px-2 py-1 rounded-full text-xs ${
-                    course.status === 'active' 
+                  <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                    course.is_active 
                       ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
+                      : 'bg-red-100 text-red-800'
                   }`}>
-                    {course.status === 'active' ? 'Đang hoạt động' : 'Tạm ngưng'}
+                    {course.is_active ? 'Đang hoạt động' : 'Không hoạt động'}
                   </span>
                 </p>
               </div>

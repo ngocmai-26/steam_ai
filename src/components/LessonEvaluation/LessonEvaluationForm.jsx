@@ -1,112 +1,157 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { LessonService } from '../../services/LessonService';
 
-const LessonEvaluationForm = ({ lesson, student, onClose }) => {
-  const [formData, setFormData] = useState({
-    focus_score: 5,
-    punctuality_score: 5,
-    interaction_score: 5,
-    comment: ''
-  });
+const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSubmit }) => {
+  const [criteria, setCriteria] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({ comment: '' });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  useEffect(() => {
+    const fetchCriteria = async () => {
+      setLoading(true);
+      try {
+        const res = await LessonService.getEvaluationCriteria();
+        setCriteria(res || []);
+        console.log("criteria", res);
+        // Khởi tạo formData với các trường code = ''
+        const initial = { comment: '' };
+        (res || []).forEach(c => { initial[c.code] = ''; });
+        setFormData(initial);
+      } catch {
+        setCriteria([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCriteria();
+  }, []);
+
+  console.log(criteria);
+
+  const handleScoreChange = (criteriaCode, score) => {
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [criteriaCode]: score
     }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // TODO: Submit evaluation data
-    console.log('Submitting evaluation:', {
-      lesson_id: lesson?.id,
-      student_id: student?.id,
-      ...formData
-    });
-    onClose();
+    if (onSubmit) {
+      onSubmit({
+        class_id: classInfo?.id,
+        student_id: student?.id,
+        module_id: module?.id,
+        lesson_id: lesson?.id,
+        ...formData
+      });
+    } else {
+      // fallback log
+      console.log('Submitting evaluation:', {
+        class_id: classInfo?.id,
+        student_id: student?.id,
+        module_id: module?.id,
+        lesson_id: lesson?.id,
+        ...formData
+      });
+    }
   };
 
-  const renderRatingInput = (name, label, value) => (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">
-        {label}
-      </label>
-      <div className="flex items-center space-x-2">
-        {[1, 2, 3, 4, 5].map((score) => (
-          <button
-            key={score}
-            type="button"
-            onClick={() => handleChange({ target: { name, value: score } })}
-            className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors duration-200 ${
-              parseInt(value) === score
-                ? 'border-indigo-600 bg-indigo-50 text-indigo-600'
-                : 'border-gray-300 hover:border-indigo-400'
+  const renderCriterion = (criterion) => (
+    <div key={criterion.code} className="space-y-4">
+      <h3 className="text-lg font-medium text-gray-900">{criterion.name}</h3>
+      <div className="space-y-2">
+        {criterion.options?.map((option) => (
+          <label
+            key={option.score}
+            className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
+              formData[criterion.code] === option.score
+                ? 'border-indigo-500 bg-indigo-50'
+                : 'border-gray-200 hover:bg-gray-50'
             }`}
           >
-            {score}
-          </button>
+            <input
+              type="radio"
+              name={criterion.code}
+              value={option.score}
+              checked={formData[criterion.code] === option.score}
+              onChange={() => handleScoreChange(criterion.code, option.score)}
+              className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+            />
+            <div className="ml-3">
+              <span className="text-sm font-medium text-gray-900">
+                {option.score} - {option.label}
+              </span>
+            </div>
+          </label>
         ))}
       </div>
     </div>
   );
 
+  if (loading) return <div className="p-6 text-center">Đang tải tiêu chí đánh giá...</div>;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
-          Đánh giá buổi học
-        </h3>
+    <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
+      <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        Đánh giá buổi học
+      </h2>
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+        {classInfo && (
+          <p className="text-gray-600">
+            <span className="font-medium">Lớp:</span> {classInfo.name}
+          </p>
+        )}
+        {student && (
+          <p className="text-gray-600">
+            <span className="font-medium">Học viên:</span> {student.name}
+          </p>
+        )}
+        {module && (
+          <p className="text-gray-600">
+            <span className="font-medium">Học phần:</span> {module.name}
+          </p>
+        )}
         {lesson && (
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <p className="text-sm text-gray-500">
-              <span className="font-medium">Buổi học:</span> {lesson.name}
-            </p>
-            {student && (
-              <p className="text-sm text-gray-500 mt-1">
-                <span className="font-medium">Học viên:</span> {student.name}
-              </p>
-            )}
-          </div>
+          <p className="text-gray-600">
+            <span className="font-medium">Buổi học:</span> {lesson.name}
+          </p>
         )}
       </div>
-
-      <div className="space-y-4">
-        {renderRatingInput('focus_score', 'Mức độ tập trung', formData.focus_score)}
-        {renderRatingInput('punctuality_score', 'Đúng giờ', formData.punctuality_score)}
-        {renderRatingInput('interaction_score', 'Mức độ tương tác', formData.interaction_score)}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Nhận xét
-        </label>
-        <textarea
-          name="comment"
-          value={formData.comment}
-          onChange={handleChange}
-          rows={4}
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-          placeholder="Nhập nhận xét của bạn..."
-        />
-      </div>
-
-      <div className="flex justify-end space-x-3">
-        <button
-          type="button"
-          onClick={onClose}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Hủy
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Lưu đánh giá
-        </button>
-      </div>
-    </form>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {criteria.length > 0 ? criteria.map(renderCriterion) : <div className="text-gray-500">Không có tiêu chí đánh giá.</div>}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Nhận xét
+          </label>
+          <textarea
+            name="comment"
+            value={formData.comment}
+            onChange={e => handleScoreChange('comment', e.target.value)}
+            rows={4}
+            className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            placeholder="Nhập nhận xét của bạn..."
+          />
+        </div>
+        <div className="flex justify-end space-x-4">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Quay lại
+            </button>
+          )}
+          <button
+            type="submit"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Lưu đánh giá
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
 
