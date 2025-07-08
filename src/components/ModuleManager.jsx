@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import axios from '../axiosConfig';
 import { closeModal } from '../slices/modalSlice';
 import { MODULE_ENDPOINTS } from '../constants/api';
+import { ButtonAction } from './Table';
 
 const API = MODULE_ENDPOINTS.MODULES;
 
@@ -162,8 +163,20 @@ const ModuleManager = () => {
                 <td className="p-2">{m.description}</td>
                 <td className="p-2 text-center">{m.total_lessons}</td>
                 <td className="p-2 flex gap-2">
-                  <button onClick={() => handleView(m)} className="text-blue-600 hover:underline">Xem</button>
-                  <button onClick={() => handleDelete(m.id)} className="text-red-600 hover:underline">Xóa</button>
+                  <ButtonAction color="indigo" onClick={() => handleView(m)}>
+                    <span className="sm:hidden">
+                      {/* icon info */}
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
+                    </span>
+                    <span className="hidden sm:inline">Chi tiết</span>
+                  </ButtonAction>
+                  <ButtonAction color="red" onClick={() => handleDelete(m.id)}>
+                    <span className="sm:hidden">
+                      {/* icon trash */}
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </span>
+                    <span className="hidden sm:inline">Xóa</span>
+                  </ButtonAction>
                 </td>
               </tr>
             ))}

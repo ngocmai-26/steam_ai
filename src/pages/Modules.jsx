@@ -5,6 +5,7 @@ import { fetchClasses } from '../thunks/classThunks';
 import { openModal } from '../slices/modalSlice';
 import Loading from '../components/Loading';
 import ModalManager from '../components/ModalManager';
+import { ButtonAction } from '../components/Table';
 
 const Modules = () => {
     const dispatch = useDispatch();
@@ -54,14 +55,14 @@ const Modules = () => {
                 </button>
             </div>
 
-            <div className="mb-6">
-                <label htmlFor="classFilter" className="block text-sm font-medium text-gray-700 mb-2">Lọc theo lớp học:</label>
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-2">
+                <label htmlFor="classFilter" className="block text-base font-semibold text-gray-700 mb-1 sm:mb-0">Lọc theo lớp học:</label>
                 <select
                     id="classFilter"
                     name="classFilter"
                     onChange={handleClassFilterChange}
                     value={selectedClass}
-                    className="mt-1 block w-full md:w-1/3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    className="w-full sm:w-64 border border-gray-400 rounded-xl px-4 py-2 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-base bg-white shadow-sm transition"
                     disabled={classesLoading}
                 >
                     <option value="">Tất cả các lớp</option>
@@ -78,12 +79,20 @@ const Modules = () => {
                             <div className="flex items-center justify-between">
                                 <div className="text-sm font-medium text-indigo-600 truncate">{module.name}</div>
                                 <div className="ml-2 flex-shrink-0 flex space-x-2">
-                                    <button onClick={() => handleEditModule(module)} className="text-gray-500 hover:text-gray-700">
-                                        Edit
-                                    </button>
-                                    <button onClick={() => handleDeleteModule(module.id)} className="text-red-500 hover:text-red-700">
-                                        Delete
-                                    </button>
+                                    <ButtonAction color="blue" onClick={() => handleEditModule(module)}>
+                                        <span className="sm:hidden">
+                                            {/* icon edit */}
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 00-4-4l-8 8v3h3z" /></svg>
+                                        </span>
+                                        <span className="hidden sm:inline">Sửa</span>
+                                    </ButtonAction>
+                                    <ButtonAction color="red" onClick={() => handleDeleteModule(module.id)}>
+                                        <span className="sm:hidden">
+                                            {/* icon trash */}
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </span>
+                                        <span className="hidden sm:inline">Xóa</span>
+                                    </ButtonAction>
                                 </div>
                             </div>
                             <div className="mt-2 sm:flex sm:justify-between">
@@ -102,7 +111,7 @@ const Modules = () => {
                     )}
                 </ul>
             </div>
-            
+
             <ModalManager />
         </div>
     );

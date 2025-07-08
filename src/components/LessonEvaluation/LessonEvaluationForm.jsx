@@ -6,6 +6,8 @@ const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSu
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ comment: '' });
 
+  console.log('student', student)
+
   useEffect(() => {
     const fetchCriteria = async () => {
       setLoading(true);
@@ -35,25 +37,28 @@ const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSu
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (onSubmit) {
-      onSubmit({
-        class_id: classInfo?.id,
-        student_id: student?.id,
-        module_id: module?.id,
-        lesson_id: lesson?.id,
-        ...formData
-      });
-    } else {
-      // fallback log
-      console.log('Submitting evaluation:', {
-        class_id: classInfo?.id,
-        student_id: student?.id,
-        module_id: module?.id,
-        lesson_id: lesson?.id,
-        ...formData
-      });
+    const payload = {
+      class_id: classInfo?.id,
+      module_id: module?.id,
+      lesson: lesson?.id,      // Đúng tên trường backend yêu cầu
+      student: student?.id ?? '', // Đảm bảo luôn có trường student
+      ...formData
+    };
+    // Kiểm tra trước khi gửi
+    if (!payload.student) {
+      alert('Bạn phải chọn học viên!');
+      return;
+    }
+    console.log('Payload gửi đánh giá:', payload);
+    try {
+      await LessonService.createLessonEvaluation(payload);
+      if (onSubmit) onSubmit(payload);
+      // Có thể thêm thông báo thành công ở đây nếu muốn
+    } catch (error) {
+      // Có thể thêm thông báo lỗi ở đây nếu muốn
+      alert('Gửi đánh giá thất bại!');
     }
   };
 
@@ -64,11 +69,10 @@ const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSu
         {criterion.options?.map((option) => (
           <label
             key={option.score}
-            className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
-              formData[criterion.code] === option.score
-                ? 'border-indigo-500 bg-indigo-50'
-                : 'border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${formData[criterion.code] === option.score
+              ? 'border-indigo-500 bg-indigo-50'
+              : 'border-gray-200 hover:bg-gray-50'
+              }`}
           >
             <input
               type="radio"
@@ -92,7 +96,7 @@ const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSu
   if (loading) return <div className="p-6 text-center">Đang tải tiêu chí đánh giá...</div>;
 
   return (
-    <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
+    <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8">
       <h2 className="text-xl font-semibold text-gray-900 mb-4">
         Đánh giá buổi học
       </h2>
@@ -104,7 +108,7 @@ const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSu
         )}
         {student && (
           <p className="text-gray-600">
-            <span className="font-medium">Học viên:</span> {student.name}
+            <span className="font-medium">Học viên:</span> {student.last_name}
           </p>
         )}
         {module && (
@@ -129,7 +133,7 @@ const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSu
             value={formData.comment}
             onChange={e => handleScoreChange('comment', e.target.value)}
             rows={4}
-            className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="w-full rounded-lg px-3 py-2 border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
             placeholder="Nhập nhận xét của bạn..."
           />
         </div>

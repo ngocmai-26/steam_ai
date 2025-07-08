@@ -19,6 +19,8 @@ const ModalManager = () => {
   const dispatch = useDispatch();
   const reduxDispatch = useReduxDispatch();
   const { isOpen, type, data } = useSelector(state => state.modal);
+  // Di chuyển hook này ra ngoài switch/case
+  const student = useReduxSelector(state => state.student.currentStudent);
 
   if (!isOpen) {
     return null;
@@ -76,7 +78,6 @@ const ModalManager = () => {
         return <ModuleManager />;
       case 'viewStudent': {
         // Hiển thị chi tiết học viên, có thể tái sử dụng StudentForm ở chế độ readOnly
-        const student = useReduxSelector(state => state.student.currentStudent);
         if (!student) return <div className="p-6">Đang tải...</div>;
         return (
           <div className="p-6">
@@ -108,12 +109,12 @@ const ModalManager = () => {
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-50 overflow-y-auto"
       onClick={() => dispatch(closeModal())}
     >
       <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-        <div 
+        <div
           className={`relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 w-full ${getModalSize()}`}
           onClick={e => e.stopPropagation()}
         >

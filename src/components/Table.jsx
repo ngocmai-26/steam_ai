@@ -2,6 +2,22 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Loading from './Loading';
 
+export const ButtonAction = ({ children, color = 'blue', ...props }) => {
+  let colorClass = '';
+  if (color === 'blue') colorClass = 'border-blue-500 text-blue-600 hover:bg-blue-50 hover:border-blue-700 focus:ring-blue-200';
+  else if (color === 'red') colorClass = 'border-red-500 text-red-600 hover:bg-red-50 hover:border-red-700 focus:ring-red-200';
+  else if (color === 'indigo') colorClass = 'border-indigo-500 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-700 focus:ring-indigo-200';
+  else colorClass = 'border-gray-400 text-gray-700 hover:bg-gray-50 hover:border-gray-600 focus:ring-gray-200';
+  return (
+    <button
+      className={`flex items-center justify-center border-2 bg-white px-2 py-2 md:px-5 md:py-1.5 rounded-full shadow transition hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 ${colorClass} text-base md:text-sm min-w-[40px] min-h-[40px]`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
 const Table = ({
   columns,
   data,
@@ -49,62 +65,64 @@ const Table = ({
         </div>
       )}
 
-      <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {column.header}
-                </th>
-              ))}
-              {actions && (
-                <th scope="col" className="relative px-6 py-3">
-                  <span className="sr-only">Actions</span>
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {data.map((item, index) => (
-              <tr
-                key={item.id || index}
-                onClick={() => onRowClick && onRowClick(item)}
-                className={onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''}
-              >
-                {columns.map((column, colIndex) => (
-                  <td
-                    key={`${index}-${colIndex}`}
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+      <div className="w-full overflow-x-auto">
+        <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg min-w-[600px]">
+          <table className="min-w-[600px] min-w-full divide-y divide-gray-200 text-sm md:text-base">
+            <thead className="bg-gray-50">
+              <tr>
+                {columns.map((column) => (
+                  <th
+                    key={column.key}
+                    scope="col"
+                    className="px-2 md:px-4 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                   >
-                    {column.render
-                      ? column.render(item[column.key], item)
-                      : item[column.key]}
-                  </td>
+                    {column.header}
+                  </th>
                 ))}
                 {actions && (
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {actions(item)}
-                  </td>
+                  <th scope="col" className="relative px-2 md:px-4 py-2 md:py-3">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 )}
               </tr>
-            ))}
-            {data.length === 0 && (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center"
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {data.map((item, index) => (
+                <tr
+                  key={item.id || index}
+                  onClick={() => onRowClick && onRowClick(item)}
+                  className={onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''}
                 >
-                  Không có dữ liệu
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  {columns.map((column, colIndex) => (
+                    <td
+                      key={`${index}-${colIndex}`}
+                      className="px-2 md:px-4 py-2 md:py-4 whitespace-nowrap text-gray-700 text-xs md:text-sm"
+                    >
+                      {column.render
+                        ? column.render(item, index)
+                        : item[column.key]}
+                    </td>
+                  ))}
+                  {actions && (
+                    <td className="px-2 md:px-4 py-2 md:py-4 whitespace-nowrap text-right text-xs md:text-sm font-medium">
+                      {actions(item)}
+                    </td>
+                  )}
+                </tr>
+              ))}
+              {data.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-2 md:px-4 py-2 md:py-4 whitespace-nowrap text-gray-500 text-center"
+                  >
+                    Không có dữ liệu
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

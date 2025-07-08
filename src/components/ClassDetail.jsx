@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import { setCurrentLesson } from '../slices/courseSlice';
 import { openModal } from '../slices/modalSlice';
+import { ButtonAction } from './Table';
 
 const selectClassDetail = state => ({
   currentClass: state.class.selectedClass || state.modal.data?.class,
@@ -16,7 +17,7 @@ const ClassDetail = () => {
 
   const handleAddStudent = useCallback(() => {
     if (currentClass && currentCourse) {
-      dispatch(openModal({ 
+      dispatch(openModal({
         type: 'addStudent',
         data: {
           class: currentClass,
@@ -28,7 +29,7 @@ const ClassDetail = () => {
 
   const handleEditStudent = useCallback((student) => {
     if (currentClass && currentCourse) {
-      dispatch(openModal({ 
+      dispatch(openModal({
         type: 'editStudent',
         data: {
           student: {
@@ -47,7 +48,7 @@ const ClassDetail = () => {
 
   const handleAddLesson = useCallback(() => {
     if (currentClass && currentCourse) {
-      dispatch(openModal({ 
+      dispatch(openModal({
         type: 'addLesson',
         data: {
           class: currentClass,
@@ -61,7 +62,7 @@ const ClassDetail = () => {
     console.log('Viewing lesson:', lesson);
     if (currentClass && currentCourse) {
       dispatch(setCurrentLesson(lesson));
-      dispatch(openModal({ 
+      dispatch(openModal({
         type: 'viewLesson',
         data: {
           lesson,
@@ -74,7 +75,7 @@ const ClassDetail = () => {
 
   const formatSchedule = (schedule) => {
     if (!schedule) return null;
-    
+
     if (typeof schedule === 'string') {
       try {
         schedule = JSON.parse(schedule);
@@ -224,12 +225,13 @@ const ClassDetail = () => {
                       {student.enrolled_at ? new Date(student.enrolled_at).toLocaleDateString('vi-VN') : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleEditStudent(student)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-3"
-                      >
-                        Sửa
-                      </button>
+                      <ButtonAction color="blue" onClick={() => handleEditStudent(student)}>
+                        <span className="sm:hidden">
+                          {/* icon edit */}
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 00-4-4l-8 8v3h3z" /></svg>
+                        </span>
+                        <span className="hidden sm:inline">Sửa</span>
+                      </ButtonAction>
                     </td>
                   </tr>
                 ))}

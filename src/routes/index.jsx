@@ -37,17 +37,17 @@ const AppRoutes = () => {
       <Route element={<PrivateRoute><MainLayout /></PrivateRoute>}>
         {/* Entry point after login, redirects based on role */}
         <Route path="/" element={<Home />} />
-        
+
         {/* Manager-only routes */}
         <Route path="/dashboard" element={<RoleBasedRoute allowedRoles={['manager']}><Dashboard /></RoleBasedRoute>} />
-        <Route path="/students" element={<RoleBasedRoute allowedRoles={['manager','teacher']}><Students /></RoleBasedRoute>} />
+        <Route path="/students" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Students /></RoleBasedRoute>} />
         <Route path="/courses" element={<RoleBasedRoute allowedRoles={['manager']}><Courses /></RoleBasedRoute>} />
-        <Route path="/classes" element={<RoleBasedRoute allowedRoles={['manager','teacher']}><Classes /></RoleBasedRoute>} />
-        <Route path="/modules" element={<RoleBasedRoute allowedRoles={['manager','teacher']}><Modules /></RoleBasedRoute>} />
-        <Route path="/evaluations" element={<RoleBasedRoute allowedRoles={['manager','teacher']}><Evaluations /></RoleBasedRoute>} />
-        <Route path="/attendance" element={<RoleBasedRoute allowedRoles={['manager','teacher']}><Attendance /></RoleBasedRoute>} />
-        <Route path="/accounts" element={<RoleBasedRoute allowedRoles={['manager']}><Accounts /></RoleBasedRoute>} />
-        <Route path="/lessons" element={<RoleBasedRoute allowedRoles={['manager','teacher']}><Lessons /></RoleBasedRoute>} />
+        <Route path="/classes" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Classes /></RoleBasedRoute>} />
+        <Route path="/modules" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Modules /></RoleBasedRoute>} />
+        <Route path="/evaluations" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Evaluations /></RoleBasedRoute>} />
+        <Route path="/attendance" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Attendance /></RoleBasedRoute>} />
+        <Route path="/accounts" element={<RoleBasedRoute allowedRoles={['admin']}><Accounts /></RoleBasedRoute>} />
+        <Route path="/lessons" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Lessons /></RoleBasedRoute>} />
 
         {/* Root-only routes */}
         <Route path="/create-user" element={<RoleBasedRoute allowedRoles={['root']}><CreateUser /></RoleBasedRoute>} />

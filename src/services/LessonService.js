@@ -6,9 +6,8 @@ const EVALUATION_CRITERIA_URL = '/back-office/evaluation-criteria';
 const LESSON_EVALUATION_URL = '/back-office/lesson-evaluations';
 
 export class LessonService {
-  // Lấy danh sách buổi học, có thể filter theo module
-  static async getLessons(moduleId = null) {
-    const params = moduleId ? { module: moduleId } : {};
+  // Lấy danh sách buổi học, có thể filter theo module, teacher
+  static async getLessons(params = {}) {
     const response = await axios.get(LESSON_ENDPOINTS.LESSONS, { params });
     return response.data;
   }
@@ -67,9 +66,26 @@ export class LessonService {
     return response.data.data;
   }
 
-  // Lấy tiêu chí đánh giá từ lesson-galleries
-  static async getLessonGalleries() {
-    const response = await axios.get('/back-office/lesson-galleries');
+  // Lấy chi tiết đánh giá buổi học
+  static async getLessonEvaluationById(id) {
+    const response = await axios.get(`/back-office/lesson-evaluations/${id}`);
     return response.data.data;
+  }
+
+  // Lấy danh sách hình ảnh buổi học (có thể filter theo lesson, module, class_room)
+  static async getLessonGalleries(params = {}) {
+    const response = await axios.get('/back-office/lesson-galleries', { params });
+    return response.data.data;
+  }
+
+  // Upload hình ảnh cho buổi học
+  static async uploadLessonGallery(lessonId, file) {
+    const formData = new FormData();
+    formData.append('lesson', lessonId);
+    formData.append('image', file);
+    const response = await axios.post('/back-office/lesson-galleries', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
   }
 } 

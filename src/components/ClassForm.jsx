@@ -13,7 +13,7 @@ const ClassForm = () => {
     const dispatch = useDispatch();
     const { type, data } = useSelector((state) => state.modal);
     const { courses } = useSelector((state) => state.course);
-    
+
     const isEditing = type === 'editClass';
     const currentClass = data?.class;
     const currentCourse = data?.course;
@@ -24,9 +24,9 @@ const ClassForm = () => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        course: '', 
-        teacher: '', 
-        teaching_assistant: '', 
+        course: '',
+        teacher: '',
+        teaching_assistant: '',
         max_students: '',
         start_date: null,
         end_date: null,
@@ -36,18 +36,18 @@ const ClassForm = () => {
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [teachers, setTeachers] = useState([]);
-    
+
     useEffect(() => {
         if (!courses.length) {
             dispatch(fetchCoursesThunk());
         }
         // Fetch teachers (dùng chung cho cả giáo viên và trợ giảng)
         axios.get('/back-office/users', { params: { role: 'teacher' } })
-          .then(res => {
-            const users = Array.isArray(res.data) ? res.data : res.data.data || [];
-            setTeachers(users);
-          })
-          .catch(() => setTeachers([]));
+            .then(res => {
+                const users = Array.isArray(res.data) ? res.data : res.data.data || [];
+                setTeachers(users);
+            })
+            .catch(() => setTeachers([]));
     }, [dispatch, courses.length]);
 
     useEffect(() => {
@@ -61,8 +61,8 @@ const ClassForm = () => {
                 max_students: currentClass.max_students || '',
                 start_date: currentClass.start_date ? new Date(currentClass.start_date) : null,
                 end_date: currentClass.end_date ? new Date(currentClass.end_date) : null,
-                schedule: typeof currentClass.schedule === 'string' 
-                    ? currentClass.schedule 
+                schedule: typeof currentClass.schedule === 'string'
+                    ? currentClass.schedule
                     : JSON.stringify(currentClass.schedule || {}, null, 2),
             });
         } else if (!isEditing && currentCourse) {
@@ -87,7 +87,7 @@ const ClassForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!validateForm()) {
             return;
         }
@@ -102,11 +102,11 @@ const ClassForm = () => {
                 console.log("isEditing", isEditing)
                 console.log("formattedData", formattedData)
                 console.log("currentClass", currentClass)
-                 await dispatch(updateClassThunk({ id: currentClass.id, classData: formattedData })).unwrap();
+                await dispatch(updateClassThunk({ id: currentClass.id, classData: formattedData })).unwrap();
             } else {
                 await dispatch(createClass(formattedData)).unwrap();
             }
-            
+
             dispatch(fetchCoursesThunk()); // Refresh courses to show updated class counts
             dispatch(closeModal());
         } catch (error) {
@@ -121,7 +121,7 @@ const ClassForm = () => {
         const { name, value } = e.target;
         console.log("name", name)
         setFormData(prev => ({ ...prev, [name]: value }));
-        
+
         // Clear error when user starts typing
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
@@ -131,7 +131,7 @@ const ClassForm = () => {
     console.log('Teachers:', teachers);
 
     return (
-        <div className="bg-white p-6 rounded-lg max-w-2xl mx-auto">
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl max-w-2xl mx-auto shadow-lg">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 {isEditing ? 'Chỉnh sửa lớp học' : 'Thêm lớp học mới'}
             </h2>
@@ -143,9 +143,8 @@ const ClassForm = () => {
                         name="course"
                         value={formData.course}
                         onChange={handleChange}
-                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-                            errors.course ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        className={`mt-1 block w-full rounded-lg px-3 py-2 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 border border-gray-400 ${errors.course ? 'border-red-300' : 'border-gray-300'
+                            }`}
                         required
                         disabled={isEditing || !!currentCourse}
                     >
@@ -158,33 +157,31 @@ const ClassForm = () => {
                     </select>
                     {errors.course && <p className="mt-1 text-sm text-red-600">{String(errors.course)}</p>}
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Tên lớp học <span className="text-red-500">*</span></label>
-                        <input 
-                            type="text" 
-                            name="name" 
-                            value={formData.name} 
-                            onChange={handleChange} 
-                            required 
-                            className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-                                errors.name ? 'border-red-300' : 'border-gray-300'
-                            }`}
+                        <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            required
+                            className={`mt-1 block w-full rounded-lg px-3 py-2 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 border border-gray-400 ${errors.name ? 'border-red-300' : 'border-gray-300'
+                                }`}
                         />
                         {errors.name && <p className="mt-1 text-sm text-red-600">{String(errors.name)}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Số học viên tối đa</label>
-                        <input 
-                            type="number" 
-                            name="max_students" 
-                            value={formData.max_students} 
-                            onChange={handleChange} 
-                            min="1" 
-                            className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-                                errors.max_students ? 'border-red-300' : 'border-gray-300'
-                            }`}
+                        <input
+                            type="number"
+                            name="max_students"
+                            value={formData.max_students}
+                            onChange={handleChange}
+                            min="1"
+                            className={`mt-1 block w-full rounded-lg px-3 py-2 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 border border-gray-400 ${errors.max_students ? 'border-red-300' : 'border-gray-300'
+                                }`}
                         />
                         {errors.max_students && <p className="mt-1 text-sm text-red-600">{String(errors.max_students)}</p>}
                     </div>
@@ -192,23 +189,23 @@ const ClassForm = () => {
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Mô tả</label>
-                    <textarea 
-                        name="description" 
-                        value={formData.description} 
-                        onChange={handleChange} 
-                        rows="3" 
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
+                    <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        rows="3"
+                        className="mt-1 block w-full rounded-lg px-3 py-2 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 border border-gray-400"
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Giáo viên</label>
                         <select
                             name="teacher"
                             value={formData.teacher}
                             onChange={handleChange}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            className="mt-1 block w-full rounded-lg px-3 py-2 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 border border-gray-400"
                             required
                         >
                             <option value="">Chọn giáo viên</option>
@@ -228,7 +225,7 @@ const ClassForm = () => {
                             name="teaching_assistant"
                             value={formData.teaching_assistant}
                             onChange={handleChange}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            className="mt-1 block w-full rounded-lg px-3 py-2 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 border border-gray-400"
                         >
                             <option value="">Chọn trợ giảng</option>
                             {teachers.map(t => (
@@ -243,13 +240,13 @@ const ClassForm = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Ngày bắt đầu <span className="text-red-500">*</span></label>
                         <DatePicker
                             selected={formData.start_date}
                             onChange={(date) => setFormData(prev => ({ ...prev, start_date: date }))}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            className="mt-1 block w-full rounded-lg px-3 py-2 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 border border-gray-400"
                             dateFormat="dd/MM/yyyy"
                             required
                         />
@@ -259,7 +256,7 @@ const ClassForm = () => {
                         <DatePicker
                             selected={formData.end_date}
                             onChange={(date) => setFormData(prev => ({ ...prev, end_date: date }))}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            className="mt-1 block w-full rounded-lg px-3 py-2 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 border border-gray-400"
                             dateFormat="dd/MM/yyyy"
                             minDate={formData.start_date}
                             required
@@ -275,9 +272,8 @@ const ClassForm = () => {
                         value={formData.schedule}
                         onChange={handleChange}
                         rows="3"
-                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm ${
-                            errors.schedule ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        className={`mt-1 block w-full rounded-lg px-3 py-2 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 font-mono text-sm border border-gray-400 ${errors.schedule ? 'border-red-300' : 'border-gray-300'
+                            }`}
                         placeholder='{"monday": "18:30-20:30", "wednesday": "18:30-20:30"}'
                     />
                     {errors.schedule && <p className="mt-1 text-sm text-red-600">{String(errors.schedule)}</p>}

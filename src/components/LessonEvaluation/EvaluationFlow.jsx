@@ -24,9 +24,9 @@ const EvaluationFlow = ({ onBack: parentOnBack }) => {
   const [loadingLessons, setLoadingLessons] = useState(false);
   const [userCache, setUserCache] = useState({});
   const [users, setUsers] = useState([]);
+  const [selectedClassDetail, setSelectedClassDetail] = useState(null);
 
   const user = useSelector(state => state.auth.user);
-  console.log('User:', user);
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -78,25 +78,25 @@ const EvaluationFlow = ({ onBack: parentOnBack }) => {
     return user?.email || user?.name || 'Không có';
   };
 
-  // Fetch students & modules when selectedClass changes
+  const handleSelectClass = async (classItem) => {
+    setSelectedClass(classItem);
+    setStep('students');
+    setLoadingStudents(true); // Bắt đầu loading
+    try {
+      const detail = await ClassService.getClassById(classItem.id);
+      setSelectedClassDetail(detail);
+      setStudents(Array.isArray(detail.data.students) ? detail.data.students : []);
+    } catch (e) {
+      setSelectedClassDetail(null);
+      setStudents([]);
+    }
+    setLoadingStudents(false); // Kết thúc loading
+  };
+
+  // XÓA HOẶC COMMENT useEffect fetch students khi selectedClass thay đổi
+  // Giữ lại fetch modules nếu cần
   useEffect(() => {
     if (!selectedClass) return;
-    // Fetch students
-    setLoadingStudents(true);
-    StudentService.getStudents()
-      .then(data => {
-        // Lọc học viên thuộc lớp này
-        const filtered = Array.isArray(data)
-          ? data.filter(s => {
-            // Có thể cần kiểm tra s.registrations
-            if (!Array.isArray(s.registrations)) return false;
-            return s.registrations.some(r => r.class_id === selectedClass.id && r.status === 'active');
-          })
-          : [];
-        setStudents(filtered);
-      })
-      .catch(() => setStudents([]))
-      .finally(() => setLoadingStudents(false));
     // Fetch modules
     setLoadingModules(true);
     axios.get(`${MODULE_ENDPOINTS.MODULES}?class_room=${selectedClass.id}`)
@@ -145,23 +145,17 @@ const EvaluationFlow = ({ onBack: parentOnBack }) => {
         }
     }
   };
-  console.log('filteredClasses', filteredClasses)
 
   const handleSubmitEvaluation = (formData) => {
     // TODO: Submit evaluation data to backend
-    console.log('Submitting evaluation:', {
-      class_id: selectedClass?.id,
-      student_id: selectedStudent?.id,
-      module_id: selectedModule?.id,
-      lesson_id: selectedLesson?.id,
-      ...formData
-    });
     if (parentOnBack) {
       parentOnBack();
     } else {
       navigate('/evaluations');
     }
   };
+
+  console.log('selectedStudent', selectedStudent)
 
   const renderClassList = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -173,10 +167,7 @@ const EvaluationFlow = ({ onBack: parentOnBack }) => {
         return (
           <div
             key={classItem.id}
-            onClick={() => {
-              setSelectedClass(classItem);
-              setStep('students');
-            }}
+            onClick={() => handleSelectClass(classItem)}
             className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
           >
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -193,11 +184,6 @@ const EvaluationFlow = ({ onBack: parentOnBack }) => {
       })}
     </div>
   );
-  console.log('students', loadingStudents)
-  filteredClasses.map((classItem) => {
-    console.log('classItem:', classItem);
-  })
-
 
   const renderStudentList = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -215,15 +201,24 @@ const EvaluationFlow = ({ onBack: parentOnBack }) => {
               className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
             >
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {student.name}
+                {(student.first_name || student.last_name) ? `${student.first_name || ''} ${student.last_name || ''}`.trim() : (student.name || 'Không rõ tên')}
               </h3>
               <div className="space-y-2 text-gray-600">
-                <p>
-                  <span className="font-medium">Email:</span> {student.email}
-                </p>
-                <p>
-                  <span className="font-medium">SĐT:</span> {student.phone}
-                </p>
+                {student.email && (
+                  <p>
+                    <span className="font-medium">Email:</span> {student.email}
+                  </p>
+                )}
+                {student.phone && (
+                  <p>
+                    <span className="font-medium">SĐT:</span> {student.phone}
+                  </p>
+                )}
+                {student.identification_number && (
+                  <p>
+                    <span className="font-medium">Mã SV:</span> {student.identification_number}
+                  </p>
+                )}
               </div>
             </div>
           ))
@@ -297,7 +292,7 @@ const EvaluationFlow = ({ onBack: parentOnBack }) => {
       case 'students':
         return `Chọn học viên - ${selectedClass?.name}`;
       case 'modules':
-        return `Chọn học phần - ${selectedStudent?.name}`;
+        return `Chọn học phần - ${selectedStudent?.last_name}`;
       case 'lessons':
         return `Chọn buổi học - ${selectedModule?.name}`;
       case 'evaluation':

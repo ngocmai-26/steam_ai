@@ -48,7 +48,7 @@ const LessonForm = ({ type }) => {
       alert('Vui lòng chọn khóa học và lớp học!');
       return;
     }
-    
+
     const lessonData = {
       ...formData,
       id: isEditing ? currentLesson.id : Date.now().toString(),
@@ -109,14 +109,14 @@ const LessonForm = ({ type }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg max-w-2xl mx-auto">
+    <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl max-w-2xl mx-auto shadow-lg">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">
         {isEditing ? 'Chỉnh sửa học phần' : 'Thêm học phần mới'}
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 gap-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Tên học phần
@@ -126,7 +126,7 @@ const LessonForm = ({ type }) => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="block w-full rounded-lg px-3 py-2 border border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
                 required
               />
             </div>
@@ -141,7 +141,7 @@ const LessonForm = ({ type }) => {
                 value={formData.class_room}
                 onChange={handleChange}
                 min="0"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="block w-full rounded-lg px-3 py-2 border border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
                 required
               />
             </div>
@@ -156,11 +156,11 @@ const LessonForm = ({ type }) => {
               value={formData.description}
               onChange={handleChange}
               rows="3"
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="block w-full rounded-lg px-3 py-2 border border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Số thứ tự
@@ -171,7 +171,7 @@ const LessonForm = ({ type }) => {
                 value={formData.sequence_number}
                 onChange={handleChange}
                 min="0"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="block w-full rounded-lg px-3 py-2 border border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
                 required
               />
             </div>
@@ -186,7 +186,7 @@ const LessonForm = ({ type }) => {
                 value={formData.total_lessons}
                 onChange={handleChange}
                 min="0"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="block w-full rounded-lg px-3 py-2 border border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
                 required
               />
             </div>
@@ -213,7 +213,7 @@ const LessonForm = ({ type }) => {
                     value={name}
                     onChange={(e) => handleLessonNameChange(index, e.target.value)}
                     placeholder={`Tên Học Phần ${index + 1}`}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="block w-full rounded-lg px-3 py-2 border border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
                   />
                   {formData.lesson_names.length > 1 && (
                     <button
