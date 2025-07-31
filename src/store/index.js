@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../slices/authSlice';
 import dashboardReducer from '../slices/dashboardSlice';
+import userReducer from '../slices/userSlice';
 import alertReducer from '../slices/alertSlice';
 import classReducer from '../slices/classSlice';
 import courseReducer from '../slices/courseSlice';
@@ -12,6 +13,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     dashboard: dashboardReducer,
+    users: userReducer,
     alert: alertReducer,
     class: classReducer,
     course: courseReducer,

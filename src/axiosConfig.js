@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from './constants/api';
+import { isAuthError, handleLogout } from './utils/authUtils';
 
 const instance = axios.create({
   baseURL: API_BASE_URL,
@@ -29,10 +30,9 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      // Thay vì dispatch action trực tiếp, chúng ta sẽ redirect về trang login
-      window.location.href = '/login';
+    // Kiểm tra lỗi authentication (401 hoặc "Verify token failed!")
+    if (isAuthError(error)) {
+      handleLogout();
     }
     return Promise.reject(error);
   }

@@ -5,15 +5,13 @@ import { FaTachometerAlt, FaUserGraduate, FaBook, FaChalkboardTeacher, FaClipboa
 
 const MainLayout = () => {
   const navigation = [
-    { name: 'Bảng điều khiển', href: '/dashboard', icon: FaTachometerAlt, roles: ['manager'] },
     { name: 'Quản lý học viên', href: '/students', icon: FaUserGraduate, roles: ['manager'] },
     { name: 'Quản lý khóa học', href: '/courses', icon: FaBook, roles: ['manager'] },
     { name: 'Quản lý lớp học', href: '/classes', icon: FaChalkboardTeacher, roles: ['manager'] },
     { name: 'Quản lý học phần', href: '/modules', icon: FaBookOpen, roles: ['manager'] },
     { name: 'Đánh giá', href: '/evaluations', icon: FaClipboardCheck, roles: ['manager', 'teacher'] },
     { name: 'Điểm danh', href: '/attendance', icon: FaUserCheck, roles: ['manager', 'teacher'] },
-    { name: 'Quản lý tài khoản', href: '/accounts', icon: FaUsersCog, roles: ['manager'] },
-    { name: 'Tạo tài khoản', href: '/create-user', icon: FaUsersCog, roles: ['root'] },
+    { name: 'Quản lý tài khoản', href: '/accounts', icon: FaUsersCog, roles: ['admin'] },
   ];
 
   return (

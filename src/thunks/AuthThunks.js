@@ -1,7 +1,9 @@
-import { setUser, logout, setLoading, setError } from '../slices/authSlice'
+import { setUser, logout, setLoading, setError } from '../slices/authSlice';
+import { setCurrentUserInfo, clearCurrentUserInfo } from '../slices/userSlice';
 import axios from '../axiosConfig'
 import { AUTH_ENDPOINTS } from '../constants/api'
 import { setAlert } from '../slices/alertSlice';
+import { clearAuthData } from '../utils/authUtils';
 
 // Fake account for testing
 const FAKE_ACCOUNT = {
@@ -47,6 +49,9 @@ export const loginThunk = ({ email, password }) => async (dispatch) => {
     localStorage.setItem('refreshToken', refresh);
     storeUserInfo(user_info);
 
+    // Lưu user_info vào userSlice
+    dispatch(setCurrentUserInfo(user_info));
+
     if (verification_required) {
       dispatch(setUser(user_info));
       dispatch(setAlert({ message: 'Yêu cầu xác thực OTP', type: 'info' }));
@@ -87,10 +92,10 @@ export const verifyThunk = ({ email, otp }) => async (dispatch) => {
 
 export const logoutThunk = () => (dispatch) => {
   try {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+    clearAuthData();
     clearUserInfo();
     dispatch(logout());
+    dispatch(clearCurrentUserInfo()); // Xóa user_info khi logout
     dispatch(setAlert({ message: 'Đã đăng xuất', type: 'info' }));
   } catch (error) {
     console.error('Logout error:', error);
@@ -103,11 +108,12 @@ export const checkAuthThunk = () => (dispatch) => {
 
   if (token && userInfo) {
     dispatch(setUser(userInfo));
+    dispatch(setCurrentUserInfo(userInfo)); // Lưu user_info khi check auth
   } else {
     // If token or user info is missing, treat as logged out
     dispatch(logout());
+    dispatch(clearCurrentUserInfo()); // Xóa user_info
     clearUserInfo();
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+    clearAuthData();
   }
 };

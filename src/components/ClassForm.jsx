@@ -8,6 +8,8 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import ClassService from '../services/ClassService';
 import axios from '../axiosConfig';
+import UserService from '../services/UserService';
+import { fetchUsersByRole } from '../slices/userSlice';
 
 const ClassForm = () => {
     const dispatch = useDispatch();
@@ -35,19 +37,14 @@ const ClassForm = () => {
 
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [teachers, setTeachers] = useState([]);
+    const teachers = useSelector((state) => state.users.usersByRole?.teacher || []);
 
     useEffect(() => {
         if (!courses.length) {
             dispatch(fetchCoursesThunk());
         }
         // Fetch teachers (dùng chung cho cả giáo viên và trợ giảng)
-        axios.get('/back-office/users', { params: { role: 'teacher' } })
-            .then(res => {
-                const users = Array.isArray(res.data) ? res.data : res.data.data || [];
-                setTeachers(users);
-            })
-            .catch(() => setTeachers([]));
+        dispatch(fetchUsersByRole('teacher'));
     }, [dispatch, courses.length]);
 
     useEffect(() => {

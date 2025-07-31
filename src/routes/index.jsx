@@ -19,6 +19,8 @@ import Attendance from '../pages/Attendance';
 import Accounts from '../pages/Accounts';
 import Modules from '../pages/Modules';
 import Lessons from '../pages/Lessons';
+import Profile from '../pages/Profile';
+import CalendarPage from '../pages/Calendar';
 
 // Layouts
 import MainLayout from '../layouts/MainLayout';
@@ -38,19 +40,23 @@ const AppRoutes = () => {
         {/* Entry point after login, redirects based on role */}
         <Route path="/" element={<Home />} />
 
-        {/* Manager-only routes */}
+        {/* Dashboard route */}
         <Route path="/dashboard" element={<RoleBasedRoute allowedRoles={['manager']}><Dashboard /></RoleBasedRoute>} />
+
+        {/* Manager-only routes */}
         <Route path="/students" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Students /></RoleBasedRoute>} />
         <Route path="/courses" element={<RoleBasedRoute allowedRoles={['manager']}><Courses /></RoleBasedRoute>} />
         <Route path="/classes" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Classes /></RoleBasedRoute>} />
         <Route path="/modules" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Modules /></RoleBasedRoute>} />
         <Route path="/evaluations" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Evaluations /></RoleBasedRoute>} />
         <Route path="/attendance" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Attendance /></RoleBasedRoute>} />
-        <Route path="/accounts" element={<RoleBasedRoute allowedRoles={['admin']}><Accounts /></RoleBasedRoute>} />
+        <Route path="/accounts" element={<RoleBasedRoute allowedRoles={['admin', 'root']}><Accounts /></RoleBasedRoute>} />
         <Route path="/lessons" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Lessons /></RoleBasedRoute>} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/calendar" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><CalendarPage /></RoleBasedRoute>} />
 
         {/* Root-only routes */}
-        <Route path="/create-user" element={<RoleBasedRoute allowedRoles={['root']}><CreateUser /></RoleBasedRoute>} />
+
       </Route>
     </Routes>
   );

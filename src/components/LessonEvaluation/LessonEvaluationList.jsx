@@ -148,29 +148,31 @@ const LessonEvaluationList = () => {
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{evaluation.interaction_score ? `${evaluation.interaction_score}/5` : ''}</td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{evaluation.comment || ''}</td>
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <ButtonAction color="indigo" onClick={() => handleShowDetail(evaluation)}>
-                        <span className="sm:hidden">
-                          {/* icon info */}
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
-                        </span>
-                        <span className="hidden sm:inline">Chi tiết</span>
-                      </ButtonAction>
-                      <ButtonAction color="blue" onClick={() => navigate(`/evaluations/edit/${evaluation.id}`)} className="ml-1">
-                        <span className="sm:hidden">
-                          {/* icon edit */}
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 00-4-4l-8 8v3h3z" /></svg>
-                        </span>
-                        <span className="hidden sm:inline">Sửa</span>
-                      </ButtonAction>
-                      {user?.role === 'manager' && (
-                        <ButtonAction color="red" onClick={() => handleDelete(evaluation.id)} className="ml-1">
+                      <div className="flex flex-row items-center justify-center space-x-2">
+                        <ButtonAction color="indigo" onClick={() => handleShowDetail(evaluation)}>
                           <span className="sm:hidden">
-                            {/* icon trash */}
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            {/* icon info */}
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
                           </span>
-                          <span className="hidden sm:inline">Xóa</span>
+                          <span className="hidden sm:inline">Chi tiết</span>
                         </ButtonAction>
-                      )}
+                        <ButtonAction color="blue" onClick={() => navigate(`/evaluations/edit/${evaluation.id}`)}>
+                          <span className="sm:hidden">
+                            {/* icon edit */}
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 00-4-4l-8 8v3h3z" /></svg>
+                          </span>
+                          <span className="hidden sm:inline">Sửa</span>
+                        </ButtonAction>
+                        {user?.role === 'manager' && (
+                          <ButtonAction color="red" onClick={() => handleDelete(evaluation.id)}>
+                            <span className="sm:hidden">
+                              {/* icon trash */}
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </span>
+                            <span className="hidden sm:inline">Xóa</span>
+                          </ButtonAction>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

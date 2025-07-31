@@ -7,6 +7,7 @@ import { StudentService } from '../../services/StudentService';
 import { LessonService } from '../../services/LessonService';
 import axios from '../../axiosConfig';
 import { MODULE_ENDPOINTS, USER_ENDPOINTS } from '../../constants/api';
+import UserService from '../../services/UserService';
 
 const EvaluationFlow = ({ onBack: parentOnBack }) => {
   const navigate = useNavigate();
@@ -66,8 +67,8 @@ const EvaluationFlow = ({ onBack: parentOnBack }) => {
 
   // Fetch toàn bộ user khi load component
   useEffect(() => {
-    axios.get('/back-office/root/users')
-      .then(res => setUsers(Array.isArray(res.data?.data) ? res.data.data : []))
+    UserService.getUsers()
+      .then(users => setUsers(users))
       .catch(() => setUsers([]));
   }, []);
 

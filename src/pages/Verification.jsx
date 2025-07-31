@@ -26,7 +26,7 @@ const Verification = () => {
     try {
       await dispatch(verifyThunk({ email, otp }));
       toast.success('Xác thực thành công!');
-      navigate('/dashboard');
+      navigate('/');
     } catch (error) {
       toast.error(error.message || 'Mã OTP không hợp lệ.');
     } finally {

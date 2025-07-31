@@ -6,10 +6,15 @@ const EVALUATION_CRITERIA_URL = '/back-office/evaluation-criteria';
 const LESSON_EVALUATION_URL = '/back-office/lesson-evaluations';
 
 export class LessonService {
-  // Lấy danh sách buổi học, có thể filter theo module, teacher
-  static async getLessons(params = {}) {
-    const response = await axios.get(LESSON_ENDPOINTS.LESSONS, { params });
-    return response.data;
+  // Lấy danh sách buổi học theo module (và các filter khác nếu cần)
+  static async getLessons(moduleId, params = {}) {
+    try {
+      const query = { ...params, module: moduleId };
+      const res = await axios.get('/back-office/lessons', { params: query });
+      return Array.isArray(res.data?.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      return [];
+    }
   }
 
   // Thêm buổi học mới
@@ -88,4 +93,6 @@ export class LessonService {
     });
     return response.data;
   }
-} 
+}
+
+export default LessonService; 

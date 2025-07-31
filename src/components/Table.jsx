@@ -10,7 +10,7 @@ export const ButtonAction = ({ children, color = 'blue', ...props }) => {
   else colorClass = 'border-gray-400 text-gray-700 hover:bg-gray-50 hover:border-gray-600 focus:ring-gray-200';
   return (
     <button
-      className={`flex items-center justify-center border-2 bg-white px-2 py-2 md:px-5 md:py-1.5 rounded-full shadow transition hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 ${colorClass} text-base md:text-sm min-w-[40px] min-h-[40px]`}
+      className={`flex items-center justify-center border-2 bg-white px-2 py-1 md:px-3 md:py-1 rounded-md shadow transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${colorClass} text-xs md:text-sm min-w-[28px] min-h-[28px]`}
       {...props}
     >
       {children}

@@ -1,17 +1,26 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import axios from '../axiosConfig';
-import { USER_ENDPOINTS } from '../constants/api';
+import { createUser, clearError } from '../slices/userSlice';
 
-const CreateUser = () => {
+const CreateUser = ({ onSuccess }) => {
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.users);
+
   const [formData, setFormData] = useState({
     email: '',
     phone: '',
     password: '',
     role: 'manager',
   });
-  const [loading, setLoading] = useState(false);
+
+  // Hiển thị error toast nếu có
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      dispatch(clearError());
+    }
+  }, [error, dispatch]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -23,15 +32,17 @@ const CreateUser = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+
     // Parse dữ liệu: nếu trường không bắt buộc là chuỗi rỗng thì chuyển thành null
     const parsedData = {
       ...formData,
       phone: formData.phone.trim() === '' ? null : formData.phone,
     };
+
     try {
-      await axios.post(USER_ENDPOINTS.CREATE_ROOT_USER, parsedData);
+      const result = await dispatch(createUser(parsedData)).unwrap();
       toast.success('Tạo tài khoản thành công!');
+
       // Reset form after successful submission
       setFormData({
         email: '',
@@ -39,11 +50,14 @@ const CreateUser = () => {
         password: '',
         role: 'manager',
       });
+
+      // Gọi callback nếu có
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'Tạo tài khoản thất bại.';
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
+      // Error đã được xử lý trong slice
+      console.error('Create user error:', error);
     }
   };
 

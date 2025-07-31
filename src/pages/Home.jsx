@@ -12,11 +12,11 @@ const Home = () => {
   }
 
   if (user.role === 'root') {
-    return <Navigate to="/create-user" replace />;
+    return <Navigate to="/accounts" replace />;
   }
 
   // Default redirection for other roles like 'manager'
-  return <Navigate to="/dashboard" replace />;
+  return <Navigate to="/" replace />;
 };
 
 export default Home; 

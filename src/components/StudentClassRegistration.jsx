@@ -15,13 +15,13 @@ const StudentClassRegistration = () => {
   const reduxDispatch = useReduxDispatch();
 
   useEffect(() => {
-    // Luôn fetch lại danh sách lớp khi mở modal
     reduxDispatch(fetchClasses());
     if (currentStudent?.id) {
       CourseRegistrationService.getRegistrations({ student: currentStudent.id })
         .then(data => setRegistrations(data || []));
     }
-  }, [currentStudent, reduxDispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStudent?.id]);
 
   const isRegistered = (classItem) => {
     return registrations.some(reg => {
@@ -53,7 +53,7 @@ const StudentClassRegistration = () => {
 
   const formatSchedule = (schedule) => {
     if (!schedule) return null;
-    
+
     if (typeof schedule === 'string') {
       try {
         schedule = JSON.parse(schedule);
@@ -187,8 +187,8 @@ const StudentClassRegistration = () => {
                             onClick={() => handleRegister(classItem.course_id, classItem.id)}
                             disabled={isFull}
                             className={`inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md
-                              ${isFull 
-                                ? 'bg-gray-300 cursor-not-allowed text-gray-500' 
+                              ${isFull
+                                ? 'bg-gray-300 cursor-not-allowed text-gray-500'
                                 : 'text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
                               }`}
                           >

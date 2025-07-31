@@ -116,10 +116,14 @@ export const deleteCourseThunk = createAsyncThunk(
   'course/deleteCourse',
   async (id, { dispatch, rejectWithValue }) => {
     try {
+      console.log('deleteCourseThunk: Deleting course with ID:', id);
+      console.log('deleteCourseThunk: API endpoint:', COURSE_ENDPOINTS.COURSE_DETAIL(id));
       await axios.delete(COURSE_ENDPOINTS.COURSE_DETAIL(id));
+      console.log('deleteCourseThunk: Delete successful');
       dispatch(setAlert({ message: 'Xóa khóa học thành công!', type: 'success' }));
       return id;
     } catch (error) {
+      console.error('deleteCourseThunk: Error:', error);
       const message = getErrorMessage(error);
       dispatch(setAlert({ message, type: 'error' }));
       return rejectWithValue(message);

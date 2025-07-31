@@ -1,0 +1,87 @@
+.steam-calendar {
+  border: none !important;
+  font-family: inherit;
+  width: 100%;
+  background: transparent;
+}
+.steam-calendar .react-calendar__navigation {
+  background: transparent;
+  margin-bottom: 1rem;
+}
+.steam-calendar .react-calendar__navigation button {
+  color: #4338ca;
+  font-weight: 600;
+  font-size: 1.1rem;
+  border-radius: 0.5rem;
+  transition: background 0.2s;
+  padding: 0.4rem 0.8rem;
+}
+.steam-calendar .react-calendar__navigation button:enabled:hover {
+  background: #e0e7ff;
+}
+.steam-calendar .react-calendar__month-view__weekdays {
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #6366f1;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+}
+.steam-calendar .react-calendar__tile {
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  color: #22223b;
+  transition: background 0.2s, color 0.2s;
+  padding: 0.5rem 0.2rem;
+}
+.steam-calendar .react-calendar__tile:enabled:hover,
+.steam-calendar .react-calendar__tile:enabled:focus {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+.steam-calendar .react-calendar__tile--active {
+  background: #6366f1 !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+.steam-calendar .react-calendar__tile--now {
+  background: #f3f4f6 !important;
+  color: #6366f1 !important;
+  border: 1.5px solid #6366f1;
+}
+.steam-calendar .react-calendar__month-view__days__day--weekend {
+  color: #ef4444;
+}
+.steam-calendar .react-calendar__tile--range,
+.steam-calendar .react-calendar__tile--rangeStart,
+.steam-calendar .react-calendar__tile--rangeEnd {
+  background: #c7d2fe !important;
+  color: #3730a3 !important;
+}
+.steam-calendar .react-calendar__tile--rangeStart,
+.steam-calendar .react-calendar__tile--rangeEnd {
+  font-weight: 700;
+}
+.steam-calendar abbr[title] {
+  text-decoration: none;
+}
+
+/* Responsive for mobile */
+@media (max-width: 640px) {
+  .steam-calendar {
+    font-size: 0.92rem;
+  }
+  .steam-calendar .react-calendar__navigation button {
+    font-size: 0.95rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.35rem;
+  }
+  .steam-calendar .react-calendar__month-view__weekdays {
+    font-size: 0.8rem;
+  }
+  .steam-calendar .react-calendar__tile {
+    font-size: 0.92rem;
+    padding: 0.32rem 0.1rem;
+    border-radius: 0.35rem;
+  }
+} 
