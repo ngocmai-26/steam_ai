@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { LessonService } from '../../services/LessonService';
 
-const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSubmit }) => {
+const LessonEvaluationForm = ({ classInfo, student, lesson, lessonId, onBack, onSubmit }) => {
   const [criteria, setCriteria] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ comment: '' });
 
-  console.log('student', student)
 
   useEffect(() => {
     const fetchCriteria = async () => {
@@ -14,7 +13,6 @@ const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSu
       try {
         const res = await LessonService.getEvaluationCriteria();
         setCriteria(res || []);
-        console.log("criteria", res);
         // Khởi tạo formData với các trường code = ''
         const initial = { comment: '' };
         (res || []).forEach(c => { initial[c.code] = ''; });
@@ -28,7 +26,6 @@ const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSu
     fetchCriteria();
   }, []);
 
-  console.log(criteria);
 
   const handleScoreChange = (criteriaCode, score) => {
     setFormData(prev => ({
@@ -41,9 +38,9 @@ const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSu
     e.preventDefault();
     const payload = {
       class_id: classInfo?.id,
-      module_id: module?.id,
-      lesson: lesson?.id,      // Đúng tên trường backend yêu cầu
       student: student?.id ?? '', // Đảm bảo luôn có trường student
+      lesson: lessonId ? parseInt(lessonId) : null, // Thêm lesson_id nếu có
+      evaluation_date: new Date().toISOString().split('T')[0], // Thêm ngày đánh giá
       ...formData
     };
     // Kiểm tra trước khi gửi
@@ -51,7 +48,6 @@ const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSu
       alert('Bạn phải chọn học viên!');
       return;
     }
-    console.log('Payload gửi đánh giá:', payload);
     try {
       await LessonService.createLessonEvaluation(payload);
       if (onSubmit) onSubmit(payload);
@@ -98,7 +94,7 @@ const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSu
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8">
       <h2 className="text-xl font-semibold text-gray-900 mb-4">
-        Đánh giá buổi học
+        Đánh giá học viên
       </h2>
       <div className="mb-6 p-4 bg-gray-50 rounded-lg">
         {classInfo && (
@@ -106,19 +102,19 @@ const LessonEvaluationForm = ({ classInfo, student, module, lesson, onBack, onSu
             <span className="font-medium">Lớp:</span> {classInfo.name}
           </p>
         )}
-        {student && (
-          <p className="text-gray-600">
-            <span className="font-medium">Học viên:</span> {student.last_name}
-          </p>
-        )}
-        {module && (
-          <p className="text-gray-600">
-            <span className="font-medium">Học phần:</span> {module.name}
-          </p>
-        )}
         {lesson && (
           <p className="text-gray-600">
             <span className="font-medium">Buổi học:</span> {lesson.name}
+          </p>
+        )}
+        {student && (
+          <p className="text-gray-600">
+            <span className="font-medium">Học viên:</span> {student.first_name} {student.last_name}
+          </p>
+        )}
+        {student?.identification_number && (
+          <p className="text-gray-600">
+            <span className="font-medium">Mã SV:</span> {student.identification_number}
           </p>
         )}
       </div>

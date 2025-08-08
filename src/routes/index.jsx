@@ -19,6 +19,7 @@ import Attendance from '../pages/Attendance';
 import Accounts from '../pages/Accounts';
 import Modules from '../pages/Modules';
 import Lessons from '../pages/Lessons';
+import LessonDetail from '../pages/LessonDetail';
 import Profile from '../pages/Profile';
 import CalendarPage from '../pages/Calendar';
 
@@ -52,6 +53,7 @@ const AppRoutes = () => {
         <Route path="/attendance" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Attendance /></RoleBasedRoute>} />
         <Route path="/accounts" element={<RoleBasedRoute allowedRoles={['admin', 'root']}><Accounts /></RoleBasedRoute>} />
         <Route path="/lessons" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Lessons /></RoleBasedRoute>} />
+        <Route path="/lessons/:id" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><LessonDetail /></RoleBasedRoute>} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/calendar" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><CalendarPage /></RoleBasedRoute>} />
 

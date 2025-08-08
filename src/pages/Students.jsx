@@ -174,8 +174,78 @@ const Students = () => {
           </button>
         )}
       </div>
-      {/* Bọc Table bằng div -mx-2 để Table scroll ngang sát mép màn hình trên mobile */}
-      <div className="-mx-2 sm:-mx-4 md:-mx-8">
+      {/* Mobile Card View */}
+      <div className="block sm:hidden space-y-4">
+        {filteredStudents.map((student) => (
+          <div
+            key={student.id}
+            onClick={() => handleRowClick(student)}
+            className="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center space-x-3 mb-3">
+              {student.avatar_url && (
+                <img
+                  src={student.avatar_url}
+                  alt={`${student.first_name} ${student.last_name}`}
+                  className="h-12 w-12 rounded-full flex-shrink-0"
+                />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="font-medium text-gray-900 text-base">
+                  {`${student.first_name} ${student.last_name}`}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {student.identification_number}
+                </div>
+                <div className="text-xs text-gray-400">
+                  {new Date(student.date_of_birth).toLocaleDateString('vi-VN')}
+                </div>
+              </div>
+              <div className="flex-shrink-0">
+                <span
+                  className={`px-2 py-1 text-xs font-medium rounded-full ${student.is_active
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                    }`}
+                >
+                  {student.is_active ? 'Đang hoạt động' : 'Không hoạt động'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-gray-100">
+              {role === 'manager' && (
+                <ButtonAction
+                  color="indigo"
+                  onClick={(e) => { e.stopPropagation(); handleRegisterClass(student); }}
+                  className="flex-1"
+                >
+                  📋 Chi tiết
+                </ButtonAction>
+              )}
+              <ButtonAction
+                color="blue"
+                onClick={(e) => { e.stopPropagation(); handleEditStudent(student); }}
+                className="flex-1"
+              >
+                ✏️ Sửa
+              </ButtonAction>
+              {role === 'manager' && (
+                <ButtonAction
+                  color="red"
+                  onClick={(e) => { e.stopPropagation(); handleDeleteStudent(student.id); }}
+                  className="flex-1"
+                >
+                  🗑️ Xóa
+                </ButtonAction>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden sm:block -mx-2 sm:-mx-4 md:-mx-8">
         <div className="bg-white rounded-lg shadow p-2 sm:p-4 overflow-x-auto">
           <Table
             columns={columns}

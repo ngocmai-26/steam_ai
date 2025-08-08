@@ -79,9 +79,8 @@ const LessonEvaluationList = () => {
             <div className="text-sm text-gray-500">Mã SV: {detail.student?.identification_number}</div>
           </div>
         </div>
-        <div className="mb-2"><b>Lớp:</b> {detail.class_room_name}</div>
-        <div className="mb-2"><b>Học phần:</b> {detail.module_name}</div>
-        <div className="mb-2"><b>Bài học:</b> {detail.lesson?.name || detail.lesson_name || detail.lesson?.id || ''}</div>
+        <div className="mb-2"><b>Lớp:</b> {detail.class_room_name || detail.class_name}</div>
+        <div className="mb-2"><b>Ngày đánh giá:</b> {detail.evaluation_date || detail.date}</div>
         <div className="mb-2"><b>Nhận xét:</b> {detail.comment}</div>
         <div className="mb-4">
           <b>Kết quả tiêu chí:</b>
@@ -124,8 +123,7 @@ const LessonEvaluationList = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã SV</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Học viên</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avatar</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bài học</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày học</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày đánh giá</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tập trung</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đúng giờ</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tương tác</th>
@@ -141,8 +139,7 @@ const LessonEvaluationList = () => {
                     <td className="px-4 py-2 whitespace-nowrap">
                       <img src={evaluation.student?.avatar_url} alt="avatar" className="w-8 h-8 rounded-full object-cover border" />
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{evaluation.lesson?.name || evaluation.lesson_name || evaluation.lesson?.id || ''}</td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{evaluation.lesson_date || evaluation.date || ''}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{evaluation.evaluation_date || evaluation.date || ''}</td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{evaluation.focus_score ? `${evaluation.focus_score}/5` : ''}</td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{evaluation.punctuality_score ? `${evaluation.punctuality_score}/5` : ''}</td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{evaluation.interaction_score ? `${evaluation.interaction_score}/5` : ''}</td>

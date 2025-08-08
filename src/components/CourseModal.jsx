@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { closeModal } from '../slices/modalSlice';
 import { createCourseThunk, updateCourseThunk } from '../thunks/courseThunks';
@@ -13,11 +13,28 @@ const CourseModal = () => {
     description: '',
     price: '',
     duration: '',
-    thumbnail: null,
     is_active: true,
   });
 
+  const [selectedFile, setSelectedFile] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState('');
+  const [removeThumbnail, setRemoveThumbnail] = useState(false);
+  const [filePreview, setFilePreview] = useState(null);
+
+  // Debug: Log formData and selectedFile changes
+
+
+  // Debug: Log selectedFile changes separately
+
+
+  // Cleanup preview URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (filePreview) {
+        URL.revokeObjectURL(filePreview);
+      }
+    };
+  }, [filePreview]);
 
   useEffect(() => {
     if (selectedCourse && type === 'edit') {
@@ -26,14 +43,29 @@ const CourseModal = () => {
         description: selectedCourse.description || '',
         price: selectedCourse.price || '',
         duration: selectedCourse.duration || '',
-        thumbnail: null,
         is_active: selectedCourse.is_active || false,
       });
+      // KHÔNG reset selectedFile và selectedFileName khi edit
+      setRemoveThumbnail(false); // Reset remove thumbnail flag
+    } else if (type === 'add') {
+      // Reset form khi thêm mới
+      setFormData({
+        name: '',
+        description: '',
+        price: '',
+        duration: '',
+        is_active: true,
+      });
+      setSelectedFile(null); // Chỉ reset file khi thêm mới
+      setSelectedFileName('');
+      setRemoveThumbnail(false);
     }
-  }, [selectedCourse, type]);
+  }, [selectedCourse, type]); // Loại bỏ selectedFile khỏi dependency array
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+
 
     // Parse các trường không bắt buộc: nếu là chuỗi rỗng thì chuyển thành null
     const parsedData = {
@@ -41,8 +73,26 @@ const CourseModal = () => {
       description: formData.description.trim() === '' ? null : formData.description,
       price: formData.price === '' ? null : formData.price,
       duration: formData.duration === '' ? null : formData.duration,
-      // thumbnail giữ nguyên vì đã là null nếu không chọn
     };
+
+    // Xử lý thumbnail
+
+    if (selectedFile) {
+      // Có file mới được chọn
+
+
+      parsedData.thumbnail = selectedFile;
+      // Thử thêm với tên field khác nếu server yêu cầu
+      parsedData.image = selectedFile;
+      parsedData.file = selectedFile;
+
+    } else if (type === 'edit' && removeThumbnail) {
+      // Đang chỉnh sửa và muốn xóa thumbnail
+      parsedData.remove_thumbnail = true;
+    } else {
+      // Không có file mới và không muốn xóa thumbnail
+      delete parsedData.thumbnail;
+    }
     try {
       if (type === 'edit') {
         await dispatch(updateCourseThunk({ id: selectedCourse.id, courseData: parsedData })).unwrap();
@@ -57,9 +107,19 @@ const CourseModal = () => {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === 'thumbnail' && files) {
-      setFormData(prev => ({ ...prev, [name]: files[0] }));
-      setSelectedFileName(files[0]?.name || '');
+
+    if (name === 'thumbnail' && files && files.length > 0) {
+      const file = files[0];
+
+
+      setSelectedFile(file);
+      setSelectedFileName(file?.name || '');
+      setRemoveThumbnail(false); // Reset remove thumbnail flag khi chọn file mới
+
+      // Tạo preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setFilePreview(previewUrl);
+
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -204,31 +264,51 @@ const CourseModal = () => {
               name="thumbnail"
               onChange={handleChange}
               accept="image/*"
-              className="hidden"
-              id="thumbnail-input"
+              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white text-gray-900"
             />
-            <label
-              htmlFor="thumbnail-input"
-              className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-200"
-            >
-              <div className="flex flex-col items-center space-y-2">
-                <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                <div className="text-sm text-gray-600">
-                  <span className="font-medium text-indigo-600 hover:text-indigo-500">Chọn file</span> hoặc kéo thả vào đây
+
+            {/* Hiển thị preview của file đã chọn */}
+            {selectedFile && filePreview && (
+              <div className="mt-2">
+                <p className="text-sm text-gray-600 mb-2">Preview:</p>
+                <div className="flex items-center space-x-2">
+                  <img
+                    src={filePreview}
+                    alt="File preview"
+                    className="w-32 h-24 object-cover rounded-lg border border-gray-200"
+                  />
+                  <div className="text-xs text-gray-500">
+                    <p>Tên: {selectedFile.name}</p>
+                    <p>Kích thước: {selectedFile.size} bytes</p>
+                    <p>Loại: {selectedFile.type}</p>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500">PNG, JPG, GIF tối đa 10MB</p>
-              </div>
-            </label>
-            {selectedFileName && (
-              <div className="mt-2 flex items-center space-x-2 text-sm text-gray-600">
-                <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>{selectedFileName}</span>
               </div>
             )}
+
+            {/* Hiển thị hình ảnh hiện tại khi chỉnh sửa */}
+            {type === 'edit' && selectedCourse && (selectedCourse.thumbnail_url || selectedCourse.thumbnail) && !selectedFileName && (
+              <div className="mt-2">
+                <p className="text-sm text-gray-600 mb-2">Hình ảnh hiện tại:</p>
+                <div className="flex items-center space-x-2 mb-2">
+                  <img
+                    src={selectedCourse.thumbnail_url || selectedCourse.thumbnail}
+                    alt="Current thumbnail"
+                    className="w-32 h-24 object-cover rounded-lg border border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setRemoveThumbnail(true)}
+                    className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors duration-200"
+                  >
+                    Xóa ảnh
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500">Chọn file mới để thay thế hoặc nhấn "Xóa ảnh" để xóa</p>
+              </div>
+            )}
+
+           
           </div>
         </div>
 

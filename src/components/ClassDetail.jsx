@@ -59,7 +59,6 @@ const ClassDetail = () => {
   }, [dispatch, currentClass, currentCourse]);
 
   const handleViewLesson = useCallback((lesson) => {
-    console.log('Viewing lesson:', lesson);
     if (currentClass && currentCourse) {
       dispatch(setCurrentLesson(lesson));
       dispatch(openModal({

@@ -58,9 +58,36 @@ const mockClasses = [
   }
 ];
 
+const mockLessonGalleries = [
+  {
+    id: 1,
+    lesson: 1,
+    image_urls: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop'],
+    created_at: '2024-01-15T10:30:00Z',
+    updated_at: '2024-01-15T10:30:00Z',
+    deleted_at: null
+  },
+  {
+    id: 2,
+    lesson: 1,
+    image_urls: ['https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=400&fit=crop'],
+    created_at: '2024-01-15T11:45:00Z',
+    updated_at: '2024-01-15T11:45:00Z',
+    deleted_at: null
+  },
+  {
+    id: 3,
+    lesson: 1,
+    image_urls: ['https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=400&fit=crop'],
+    created_at: '2024-01-15T12:15:00Z',
+    updated_at: '2024-01-15T12:15:00Z',
+    deleted_at: null
+  }
+];
+
 const mockStudents = [
   {
-    id: "ST001",
+    id: 1,
     name: "Nguyễn Văn X",
     email: "x.nguyen@example.com",
     phone: "0901234567",
@@ -75,7 +102,7 @@ const mockStudents = [
     ]
   },
   {
-    id: "ST002",
+    id: 2,
     name: "Trần Thị Y",
     email: "y.tran@example.com",
     phone: "0909876543",
@@ -85,6 +112,21 @@ const mockStudents = [
         class_id: 1,
         course_id: 1,
         registration_date: "2024-01-02",
+        status: "active"
+      }
+    ]
+  },
+  {
+    id: 3,
+    name: "123123 123123123",
+    email: "thuannt@gmail.com",
+    phone: "0901234568",
+    avatar: "/images/avatars/student3.jpg",
+    registrations: [
+      {
+        class_id: 1,
+        course_id: 1,
+        registration_date: "2024-01-03",
         status: "active"
       }
     ]
@@ -261,33 +303,66 @@ const mockLessons = [
 const mockLessonEvaluations = [
   {
     id: 1,
-    lesson_id: 1,
-    student_id: "ST001",
+    student_id: 1,
     class_id: 1,
-    module_id: 1,
+    lesson_id: 1,
     evaluation_date: "2024-03-15",
-    attendance: "present",
-    participation: 8,
-    understanding: 7,
-    homework_completion: 9,
-    teacher_comments: "Học viên tham gia tích cực, hiểu bài tốt",
-    student_feedback: "Bài giảng rất hay và dễ hiểu",
-    status: "completed"
+    focus_score: 4,
+    punctuality_score: 5,
+    interaction_score: 4,
+    comment: "Học viên tham gia tích cực, hiểu bài tốt",
+    status: "completed",
+    student: {
+      id: 1,
+      first_name: "Nguyễn Văn",
+      last_name: "X",
+      identification_number: "ST001",
+      email: "x.nguyen@example.com",
+      avatar_url: "/images/avatars/student1.jpg"
+    },
+    class_room_name: "Lớp React Cơ bản"
   },
   {
     id: 2,
-    lesson_id: 1,
-    student_id: "ST002",
+    student_id: 2,
     class_id: 1,
-    module_id: 1,
+    lesson_id: 1,
     evaluation_date: "2024-03-15",
-    attendance: "present",
-    participation: 7,
-    understanding: 8,
-    homework_completion: 8,
-    teacher_comments: "Cần cải thiện thêm về phần thực hành",
-    student_feedback: "Mong được thực hành nhiều hơn",
-    status: "completed"
+    focus_score: 3,
+    punctuality_score: 4,
+    interaction_score: 3,
+    comment: "Cần cải thiện thêm về phần thực hành",
+    status: "completed",
+    student: {
+      id: 2,
+      first_name: "Trần Thị",
+      last_name: "Y",
+      identification_number: "ST002",
+      email: "y.tran@example.com",
+      avatar_url: "/images/avatars/student2.jpg"
+    },
+    class_room_name: "Lớp React Cơ bản"
+  },
+  {
+    id: 3,
+    student_id: 1,
+    class_id: 1,
+    lesson_id: 34,
+    evaluation_date: "2024-08-07",
+    focus_score: 4,
+    punctuality_score: 5,
+    interaction_score: 4,
+    comment: "Học viên tham gia tích cực, hiểu bài tốt",
+    status: "completed",
+    student: {
+      id: 1,
+      first_name: "123123",
+      last_name: "123123123",
+      identification_number: "123123123",
+      email: "thuannt@gmail.com",
+      avatar_url: "/images/avatars/student1.jpg"
+    },
+    class_room_name: "STEAMAI-AIDTI-BD-2025-CREDES-01"
   }
 ];
 
@@ -586,14 +661,35 @@ export const mockApiService = {
   },
 
   // Lesson Evaluation APIs
-  getLessonEvaluations: async () => {
+  getLessonEvaluations: async (params = {}) => {
     await new Promise(resolve => setTimeout(resolve, 500));
-    return [...mockLessonEvaluations];
+    let filtered = [...mockLessonEvaluations];
+    
+    console.log('getLessonEvaluations params:', params);
+    console.log('Available evaluations:', mockLessonEvaluations);
+    
+    if (params.class_id) {
+      filtered = filtered.filter(e => e.class_id === parseInt(params.class_id));
+    }
+    if (params.student) {
+      // Convert student param to number for comparison
+      const studentId = parseInt(params.student);
+      filtered = filtered.filter(e => e.student_id === studentId);
+      console.log('Filtering by student_id:', studentId, 'Found:', filtered.length);
+    }
+    if (params.lesson) {
+      const lessonId = parseInt(params.lesson);
+      filtered = filtered.filter(e => e.lesson_id === lessonId);
+      console.log('Filtering by lesson_id:', lessonId, 'Found:', filtered.length);
+    }
+    
+    console.log('Final filtered evaluations:', filtered);
+    return filtered.map(e => ({ ...e }));
   },
 
-  getLessonEvaluationsByLessonId: async (lessonId) => {
+  getLessonEvaluationsByClassId: async (classId) => {
     await new Promise(resolve => setTimeout(resolve, 500));
-    return mockLessonEvaluations.filter(e => e.lesson_id === lessonId).map(e => ({ ...e }));
+    return mockLessonEvaluations.filter(e => e.class_id === classId).map(e => ({ ...e }));
   },
 
   getLessonEvaluationsByStudentId: async (studentId) => {
@@ -601,12 +697,53 @@ export const mockApiService = {
     return mockLessonEvaluations.filter(e => e.student_id === studentId).map(e => ({ ...e }));
   },
 
+  // Kiểm tra đánh giá của học viên cho buổi học cụ thể
+  getStudentLessonEvaluation: async (lessonId, studentId) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    console.log('getStudentLessonEvaluation called with:', { lessonId, studentId });
+    console.log('Available evaluations:', mockLessonEvaluations);
+    
+    const filtered = mockLessonEvaluations.filter(e => 
+      e.lesson_id === parseInt(lessonId) && e.student_id === parseInt(studentId)
+    );
+    
+    console.log('Filtered evaluations:', filtered);
+    return filtered.map(e => ({ ...e }));
+  },
+
   createLessonEvaluation: async (evaluationData) => {
     await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Validation: Kiểm tra các trường bắt buộc
+    if (!evaluationData.student) {
+      throw new Error('Student field is required');
+    }
+    if (!evaluationData.lesson) {
+      throw new Error('Lesson field is required');
+    }
+    
+    // Tìm thông tin student
+    const student = mockStudents.find(s => s.id === evaluationData.student);
+    const studentInfo = student ? {
+      id: student.id,
+      first_name: student.name.split(' ').slice(0, -1).join(' '),
+      last_name: student.name.split(' ').slice(-1)[0],
+      identification_number: student.id,
+      email: student.email,
+      avatar_url: student.avatar
+    } : null;
+
+    // Tìm thông tin class
+    const classInfo = mockClasses.find(c => c.id === evaluationData.class_id);
+    
     const newEvaluation = {
       id: mockLessonEvaluations.length + 1,
       ...evaluationData,
-      status: 'completed'
+      lesson_id: evaluationData.lesson, // Lưu lesson_id
+      evaluation_date: evaluationData.evaluation_date || new Date().toISOString().split('T')[0],
+      status: 'completed',
+      student: studentInfo,
+      class_room_name: classInfo?.name || 'Không rõ lớp'
     };
     mockLessonEvaluations.push(newEvaluation);
     return { ...newEvaluation };
@@ -631,6 +768,49 @@ export const mockApiService = {
   getStudents: async () => {
     await new Promise(resolve => setTimeout(resolve, 500));
     return [...mockStudents];
+  },
+
+  // Lesson Gallery APIs
+  getLessonGalleries: async (lessonId) => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    console.log('Mock: Getting lesson galleries for lessonId:', lessonId);
+    const filteredGalleries = mockLessonGalleries.filter(gallery => gallery.lesson === parseInt(lessonId));
+    return {
+      data: filteredGalleries,
+      message: "Thành công!"
+    };
+  },
+
+  uploadLessonImage: async (lessonId, imageFile) => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('Mock: Uploading image for lessonId:', lessonId, 'File:', imageFile.name);
+    
+    const newGallery = {
+      id: mockLessonGalleries.length + 1,
+      lesson: parseInt(lessonId),
+      image_urls: [URL.createObjectURL(imageFile)],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      deleted_at: null
+    };
+    
+    mockLessonGalleries.push(newGallery);
+    return {
+      data: newGallery,
+      message: "Upload thành công!"
+    };
+  },
+
+  deleteLessonImage: async (imageId) => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    console.log('Mock: Deleting image with id:', imageId);
+    
+    const index = mockLessonGalleries.findIndex(gallery => gallery.id === imageId);
+    if (index !== -1) {
+      mockLessonGalleries.splice(index, 1);
+    }
+    
+    return { success: true };
   },
 
   getStudentsByClassId: async (classId) => {

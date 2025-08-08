@@ -35,12 +35,14 @@ const Navbar = () => {
     {
       to: '/students',
       label: 'Quản lý học viên',
-      icon: '👥'
+      icon: '👥',
+      hideForTeacher: true
     },
     {
       to: '/courses',
       label: 'Quản lý khóa học',
-      icon: '📚'
+      icon: '📚',
+      managerOnly: true
     },
     {
       to: '/classes',
@@ -50,27 +52,21 @@ const Navbar = () => {
     {
       to: '/modules',
       label: 'Quản lý học phần',
-      icon: '🧩'
+      icon: '🧩',
+      hideForTeacher: true
     },
     {
       to: '/lessons',
       label: 'Quản lý buổi học',
-      icon: '📅'
+      icon: '📅',
+      hideForTeacher: true
     },
-    {
-      to: '/evaluations',
-      label: 'Đánh giá học viên',
-      icon: '⭐'
-    },
-    {
-      to: '/attendance',
-      label: 'Điểm danh',
-      icon: '✅'
-    },
+
     {
       to: '/calendar',
       label: 'Lịch học',
-      icon: '📆'
+      icon: '📆',
+      hideForManager: true
     },
     {
       to: '/accounts',
@@ -82,11 +78,29 @@ const Navbar = () => {
 
   // Lọc menu theo role
   const isAdmin = user && (user.role?.toLowerCase() === 'admin' || user.role?.toLowerCase() === 'root');
+  const isManager = user && user.role?.toLowerCase() === 'manager';
+  const isTeacher = user && user.role?.toLowerCase() === 'teacher';
+
   let filteredMenuItems = menuItems;
   if (isAdmin) {
     filteredMenuItems = menuItems.filter(item => item.adminOnly);
   } else {
     filteredMenuItems = menuItems.filter(item => !item.adminOnly);
+  }
+
+  // Ẩn các menu cụ thể cho manager
+  if (isManager) {
+    filteredMenuItems = filteredMenuItems.filter(item => !item.hideForManager);
+  }
+
+  // Ẩn menu chỉ dành cho manager cho các role khác
+  if (!isManager) {
+    filteredMenuItems = filteredMenuItems.filter(item => !item.managerOnly);
+  }
+
+  // Ẩn các menu cụ thể cho teacher
+  if (isTeacher) {
+    filteredMenuItems = filteredMenuItems.filter(item => !item.hideForTeacher);
   }
 
   const handleLogout = () => {

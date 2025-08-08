@@ -16,7 +16,6 @@ const StatCard = ({ title, value, icon, color, to }) => (
 );
 
 const Dashboard = () => {
-  console.log('Dashboard component rendered');
   const stats = [
     {
       title: 'Tổng số học viên',

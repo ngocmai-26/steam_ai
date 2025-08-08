@@ -22,7 +22,6 @@ const Accounts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  console.log('Accounts component rendered:', { users, loading, error, filters });
 
   const columns = [
     { header: 'ID', key: 'id' },
@@ -36,14 +35,12 @@ const Accounts = () => {
 
   // Fetch users khi component mount
   useEffect(() => {
-    console.log('Accounts: Fetching users on mount');
     dispatch(fetchUsers(filters));
   }, []); // Chỉ chạy 1 lần khi mount
 
   // Fetch users khi filters thay đổi
   useEffect(() => {
     if (filters.role !== '' || filters.status !== '' || filters.search !== '') {
-      console.log('Accounts: Fetching users with filters:', filters);
       dispatch(fetchUsers(filters));
     }
   }, [filters.role, filters.status, filters.search, dispatch]);

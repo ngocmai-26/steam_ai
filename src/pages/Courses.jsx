@@ -38,12 +38,9 @@ const Courses = () => {
 
   const handleDeleteCourse = async (e, course) => {
     e.stopPropagation();
-    console.log('Delete course clicked:', course);
     if (!window.confirm(`Bạn có chắc chắn muốn xóa khóa học "${course.name}"?`)) return;
     try {
-      console.log('Calling deleteCourseThunk with ID:', course.id);
       await dispatch(deleteCourseThunk(course.id)).unwrap();
-      console.log('Delete course successful');
       toast.success('Xóa khóa học thành công!');
       dispatch(fetchCoursesThunk());
     } catch (error) {
@@ -126,8 +123,8 @@ const Courses = () => {
                 <p className="text-gray-600 text-sm mb-4">{course.description}</p>
                 <div className="text-sm text-gray-500 space-y-1">
                   <p><span className="font-medium">Mã khóa học:</span> {course.code}</p>
-                  <p><span className="font-medium">Giá:</span> {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.price || 0)}</p>
-                  <p><span className="font-medium">Thời lượng:</span> {course.duration} phút</p>
+                  <p><span className="font-medium">Giá:</span> {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.price || 0)}/level</p>
+                  <p><span className="font-medium">Thời lượng:</span> {course.duration} phút/level</p>
                   <p className="flex items-center">
                     <span className="font-medium">Trạng thái:</span>
                     <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${course.is_active

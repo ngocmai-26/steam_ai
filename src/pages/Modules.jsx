@@ -17,6 +17,12 @@ const Modules = () => {
         dispatch(fetchClasses());
     }, [dispatch]);
 
+    // Helper function to get class name by class_room ID
+    const getClassName = (classRoomId) => {
+        const classItem = classes.find(c => c.id === classRoomId);
+        return classItem ? classItem.name : `Lớp ${classRoomId}`;
+    };
+
     useEffect(() => {
         // Fetch modules for the selected class, or all if none is selected
         dispatch(fetchModulesThunk(selectedClass || null));
@@ -77,7 +83,12 @@ const Modules = () => {
                     {modules.length > 0 ? modules.map((module) => (
                         <li key={module.id} className="px-4 py-4 sm:px-6">
                             <div className="flex items-center justify-between">
-                                <div className="text-sm font-medium text-indigo-600 truncate">{module.name}</div>
+                                <div className="flex-1">
+                                    <div className="text-sm font-medium text-indigo-600 truncate">{module.name}</div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                        Lớp: {getClassName(module.class_room)}
+                                    </div>
+                                </div>
                                 <div className="ml-2 flex-shrink-0 flex space-x-2">
                                     <ButtonAction color="blue" onClick={() => handleEditModule(module)}>
                                         <span className="sm:hidden">

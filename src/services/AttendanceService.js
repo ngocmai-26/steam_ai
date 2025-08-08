@@ -1,27 +1,43 @@
 import axios from '../axiosConfig';
 
 class AttendanceService {
-  // Lấy danh sách điểm danh
-  static async getAttendances(params = {}) {
+  // Lấy danh sách điểm danh cho một buổi học
+  static async getAttendances(lessonId) {
     try {
-      const response = await axios.get('/back-office/attendances', { params });
-      return response.data?.data || response.data || [];
+      
+      // // Kiểm tra xem API có tồn tại không bằng cách gọi với timeout ngắn
+      const response = await axios.get('/back-office/attendances', {
+        params: { lesson: lessonId },
+      });
+      
+      
+      // Kiểm tra response status
+      if (response.status >= 200 && response.status < 300) {
+        return response.data?.data || response.data || [];
+      } else {
+        return [];
+      }
+      
     } catch (error) {
-      console.error('Error fetching attendances:', error);
-      throw error;
+      console.error('Error fetching attendances from /back-office/attendances:', error);
+      
+      
+      
+      // Không throw error để tránh logout, chỉ return empty array
+      return [];
     }
   }
 
-  // Lấy chi tiết điểm danh theo ID
-  static async getAttendanceById(id) {
-    try {
-      const response = await axios.get(`/back-office/attendance/${id}`);
-      return response.data?.data || response.data;
-    } catch (error) {
-      console.error('Error fetching attendance:', error);
-      throw error;
-    }
-  }
+  // // Lấy chi tiết điểm danh theo ID
+  // static async getAttendanceById(id) {
+  //   try {
+  //     const response = await axios.get(`/back-office/attendance/${id}`);
+  //     return response.data?.data || response.data;
+  //   } catch (error) {
+  //     console.error('Error fetching attendance:', error);
+  //     throw error;
+  //   }
+  // }
 
   // Tạo điểm danh mới
   static async createAttendance({ student, lesson, status, note }) {
@@ -113,6 +129,28 @@ class AttendanceService {
     } catch (error) {
       console.error('Error fetching attendance stats:', error);
       throw error;
+    }
+  }
+
+  // Test API endpoint mà không gây logout
+  static async testAttendanceAPI(lessonId) {
+    try {
+      
+      const response = await axios.get('/back-office/attendances', {
+        params: { lesson: lessonId },
+        timeout: 3000 // 3 giây timeout
+      });
+      
+      return { success: true, data: response.data };
+      
+    } catch (error) {
+      if (error.response) {
+        return { success: false, status: error.response.status, message: 'API exists but returned error' };
+      } else if (error.request) {
+        return { success: false, message: 'No response from server' };
+      } else {
+        return { success: false, message: error.message };
+      }
     }
   }
 }

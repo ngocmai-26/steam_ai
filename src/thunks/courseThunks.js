@@ -20,11 +20,26 @@ import { setAlert } from '../slices/alertSlice';
 // Helper function to create FormData
 const createCourseFormData = (courseData) => {
   const formData = new FormData();
+  
   Object.keys(courseData).forEach(key => {
-    if (courseData[key] !== null && courseData[key] !== undefined) {
-      formData.append(key, courseData[key]);
+    const value = courseData[key];
+    
+    // Chỉ thêm vào FormData nếu giá trị không null, undefined và không phải là chuỗi rỗng
+    if (value !== null && value !== undefined && value !== '') {
+      // Đặc biệt xử lý cho boolean values
+      if (typeof value === 'boolean') {
+        formData.append(key, value.toString());
+      } else if (value instanceof File) {
+        formData.append(key, value);
+      } else {
+        formData.append(key, value);
+      }
+    } else {
     }
   });
+  
+  // Debug: Log final FormData
+  
   return formData;
 };
 
@@ -95,16 +110,33 @@ export const updateCourseThunk = createAsyncThunk(
   'course/updateCourse',
   async ({ id, courseData }, { dispatch, rejectWithValue }) => {
     try {
+      
+    
+      
       const formData = createCourseFormData(courseData);
-      const response = await axios.put(COURSE_ENDPOINTS.COURSE_DETAIL(id), formData, {
+      
+     
+      
+      // Kiểm tra xem có file upload không
+      const hasFileUpload = courseData.thumbnail instanceof File;
+      
+      let response;
+      
+      // Luôn sử dụng endpoint chính với FormData
+      response = await axios.put(COURSE_ENDPOINTS.COURSE_DETAIL(id), formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+      
+       
+      dispatch(setAlert({ message: 'Cập nhật khóa học thành công!', type: 'success' }));
+      return response.data.data;
+     
       dispatch(setAlert({ message: 'Cập nhật khóa học thành công!', type: 'success' }));
       return response.data.data;
     } catch (error) {
-      const message = getErrorMessage(error);
+     const message = getErrorMessage(error);
       dispatch(setAlert({ message, type: 'error' }));
       return rejectWithValue(message);
     }
@@ -116,10 +148,7 @@ export const deleteCourseThunk = createAsyncThunk(
   'course/deleteCourse',
   async (id, { dispatch, rejectWithValue }) => {
     try {
-      console.log('deleteCourseThunk: Deleting course with ID:', id);
-      console.log('deleteCourseThunk: API endpoint:', COURSE_ENDPOINTS.COURSE_DETAIL(id));
       await axios.delete(COURSE_ENDPOINTS.COURSE_DETAIL(id));
-      console.log('deleteCourseThunk: Delete successful');
       dispatch(setAlert({ message: 'Xóa khóa học thành công!', type: 'success' }));
       return id;
     } catch (error) {

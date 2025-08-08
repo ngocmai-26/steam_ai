@@ -6,9 +6,7 @@ export const fetchUsers = createAsyncThunk(
   'users/fetchUsers',
   async (params = {}, { rejectWithValue }) => {
     try {
-      console.log('fetchUsers thunk called with params:', params);
       const response = await UserService.getUsers(params);
-      console.log('fetchUsers thunk response:', response);
       return response;
     } catch (error) {
       console.error('fetchUsers thunk error:', error);

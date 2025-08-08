@@ -12,7 +12,6 @@ const LessonDetail = () => {
   const dispatch = useDispatch();
   const { currentLesson, currentClass, currentCourse } = useSelector(selectLessonDetail, shallowEqual);
 
-  console.log('LessonDetail rendering with:', { currentLesson, currentClass, currentCourse });
 
   const handleEditLesson = useCallback(() => {
     if (currentLesson && currentClass && currentCourse) {
@@ -28,7 +27,6 @@ const LessonDetail = () => {
   }, [dispatch, currentLesson, currentClass, currentCourse]);
 
   if (!currentLesson || !currentClass || !currentCourse) {
-    console.log('Missing required data for LessonDetail');
     return null;
   }
 

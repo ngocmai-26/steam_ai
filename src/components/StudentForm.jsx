@@ -107,13 +107,13 @@ const StudentForm = ({ type, onSuccess }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Mã học viên */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mã học viên</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mã học viên <span className="text-red-500">*</span></label>
             <input
               type="text"
               name="identification_number"
               value={formData.identification_number}
               onChange={handleChange}
-              className="block w-full rounded-lg border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2"
+              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
               required
             />
           </div>
@@ -124,7 +124,7 @@ const StudentForm = ({ type, onSuccess }) => {
               type="file"
               onChange={handleFileChange}
               accept="image/*"
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-300 rounded-lg"
             />
             {formData.avatar_url && (
               <img
@@ -136,48 +136,48 @@ const StudentForm = ({ type, onSuccess }) => {
           </div>
           {/* Họ */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Họ</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Họ <span className="text-red-500">*</span></label>
             <input
               type="text"
               name="first_name"
               value={formData.first_name}
               onChange={handleChange}
-              className="block w-full rounded-lg border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2"
+              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
               required
             />
           </div>
           {/* Tên */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tên</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tên <span className="text-red-500">*</span></label>
             <input
               type="text"
               name="last_name"
               value={formData.last_name}
               onChange={handleChange}
-              className="block w-full rounded-lg border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2"
+              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
               required
             />
           </div>
           {/* Ngày sinh */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ngày sinh</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ngày sinh <span className="text-red-500">*</span></label>
             <input
               type="date"
               name="date_of_birth"
               value={formData.date_of_birth}
               onChange={handleChange}
-              className="block w-full rounded-lg border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2"
+              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
               required
             />
           </div>
           {/* Giới tính */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Giới tính</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Giới tính <span className="text-red-500">*</span></label>
             <select
               name="gender"
               value={formData.gender}
               onChange={handleChange}
-              className="block w-full rounded-lg border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2"
+              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
             >
               <option value="male">Nam</option>
               <option value="female">Nữ</option>
@@ -192,7 +192,7 @@ const StudentForm = ({ type, onSuccess }) => {
               name="address"
               value={formData.address}
               onChange={handleChange}
-              className="block w-full rounded-lg border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2"
+              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
             />
           </div>
           {/* Số điện thoại */}
@@ -203,7 +203,7 @@ const StudentForm = ({ type, onSuccess }) => {
               name="phone_number"
               value={formData.phone_number}
               onChange={handleChange}
-              className="block w-full rounded-lg border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2"
+              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
             />
           </div>
           {/* Email */}
@@ -214,29 +214,29 @@ const StudentForm = ({ type, onSuccess }) => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="block w-full rounded-lg border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2"
+              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
             />
           </div>
           {/* Tên phụ huynh */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tên phụ huynh</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tên phụ huynh <span className="text-red-500">*</span></label>
             <input
               type="text"
               name="parent_name"
               value={formData.parent_name}
               onChange={handleChange}
-              className="block w-full rounded-lg border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2"
+              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
             />
           </div>
           {/* Số điện thoại phụ huynh */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại phụ huynh</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại phụ huynh <span className="text-red-500">*</span></label>
             <input
               type="tel"
               name="parent_phone"
               value={formData.parent_phone}
               onChange={handleChange}
-              className="block w-full rounded-lg border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2"
+              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
             />
           </div>
           {/* Email phụ huynh */}
@@ -247,7 +247,7 @@ const StudentForm = ({ type, onSuccess }) => {
               name="parent_email"
               value={formData.parent_email}
               onChange={handleChange}
-              className="block w-full rounded-lg border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2"
+              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
             />
           </div>
           {/* Ghi chú */}
@@ -258,7 +258,7 @@ const StudentForm = ({ type, onSuccess }) => {
               value={formData.note}
               onChange={handleChange}
               rows="3"
-              className="block w-full rounded-lg border-gray-400 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2"
+              className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
             />
           </div>
           {/* Đang hoạt động */}

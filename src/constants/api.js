@@ -23,6 +23,7 @@ export const AUTH_ENDPOINTS = {
 export const COURSE_ENDPOINTS = {
   COURSES: `${API_BASE_URL}/back-office/courses`,
   COURSE_DETAIL: (id) => `${API_BASE_URL}/back-office/courses/${id}`,
+  UPLOAD_THUMBNAIL: (id) => `${API_BASE_URL}/back-office/courses/${id}/thumbnail`,
 };
 
 export const CLASS_ENDPOINTS = {

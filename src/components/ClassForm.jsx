@@ -20,8 +20,6 @@ const ClassForm = () => {
     const currentClass = data?.class;
     const currentCourse = data?.course;
 
-    // Debug log để kiểm tra giá trị khi mở form
-    console.log('ClassForm debug:', { type, data, isEditing, currentClass });
 
     const [formData, setFormData] = useState({
         name: '',
@@ -96,9 +94,6 @@ const ClassForm = () => {
             // Format data using service
             const formattedData = ClassService.formatClassData(formData);
             if (isEditing) {
-                console.log("isEditing", isEditing)
-                console.log("formattedData", formattedData)
-                console.log("currentClass", currentClass)
                 await dispatch(updateClassThunk({ id: currentClass.id, classData: formattedData })).unwrap();
             } else {
                 await dispatch(createClass(formattedData)).unwrap();
@@ -116,7 +111,6 @@ const ClassForm = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        console.log("name", name)
         setFormData(prev => ({ ...prev, [name]: value }));
 
         // Clear error when user starts typing
@@ -124,8 +118,6 @@ const ClassForm = () => {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
     };
-
-    console.log('Teachers:', teachers);
 
     return (
         <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl max-w-2xl mx-auto shadow-lg">
@@ -183,6 +175,8 @@ const ClassForm = () => {
                         {errors.max_students && <p className="mt-1 text-sm text-red-600">{String(errors.max_students)}</p>}
                     </div>
                 </div>
+
+
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Mô tả</label>
@@ -261,6 +255,8 @@ const ClassForm = () => {
                         {errors.end_date && <p className="mt-1 text-sm text-red-600">{String(errors.end_date)}</p>}
                     </div>
                 </div>
+
+
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Lịch học (JSON)</label>

@@ -8,8 +8,6 @@ const AttendanceForm = ({ classInfo, student, module, lesson, onBack, onSubmit }
         note: ''
     });
 
-    console.log('student', student)
-
     const handleStatusChange = (status) => {
         setFormData(prev => ({
             ...prev,
