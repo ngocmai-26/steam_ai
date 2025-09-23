@@ -87,6 +87,21 @@ export class ClassService {
   }
 
   /**
+   * Get students by classroom ID
+   * @param {string|number} classroomId - Classroom ID
+   * @returns {Promise} - Promise with students data
+   */
+  static async getStudentsByClassroom(classroomId) {
+    try {
+      const response = await axios.get(`${CLASS_ENDPOINTS.CLASSES}/${classroomId}/students`);
+      return response.data?.data || response.data || [];
+    } catch (error) {
+      console.error('Error fetching students for classroom:', error);
+      return [];
+    }
+  }
+
+  /**
    * Get class statistics
    * @param {string|number} classId - Class ID
    * @returns {Promise} - Promise with statistics data

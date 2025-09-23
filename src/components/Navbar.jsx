@@ -31,7 +31,12 @@ const Navbar = () => {
   }, [isUserMenuOpen]);
 
   const menuItems = [
-
+    {
+      to: '/student-registrations',
+      label: 'Duyệt đăng ký',
+      icon: '✅',
+      managerOnly: true
+    },
     {
       to: '/students',
       label: 'Quản lý học viên',
@@ -73,6 +78,11 @@ const Navbar = () => {
       label: 'Quản lý tài khoản',
       icon: '🛡️',
       adminOnly: true
+    },
+    {
+      to: '/news',
+      label: 'Quản lý tin tức',
+      icon: '📰'
     }
   ];
 

@@ -18,12 +18,18 @@ instance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    // Không override Content-Type nếu đã được set (ví dụ: multipart/form-data cho file upload)
-    if (!config.headers['Content-Type']) {
+
+    // Không set Content-Type cho FormData để browser tự set với boundary
+    // Chỉ set Content-Type cho JSON requests
+    if (!(config.data instanceof FormData) && !config.headers['Content-Type']) {
       config.headers['Content-Type'] = 'application/json';
     }
-    
+
+    // Debug: Log headers for FormData requests
+    if (config.data instanceof FormData) {
+      console.log('FormData request headers:', config.headers);
+    }
+
     return config;
   },
   (error) => {

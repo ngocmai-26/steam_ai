@@ -11,6 +11,7 @@ import ModuleForm from './ModuleForm';
 import StudentForm from './StudentForm';
 import StudentClassRegistration from './StudentClassRegistration';
 import ModuleManager from './ModuleManager';
+import NewsModal from './NewsModal';
 import { useDispatch as useReduxDispatch } from 'react-redux';
 import { fetchStudents } from '../slices/studentSlice';
 import { useSelector as useReduxSelector } from 'react-redux';
@@ -76,6 +77,11 @@ const ModalManager = () => {
         return <StudentClassRegistration />;
       case 'manageModules':
         return <ModuleManager />;
+      // News management
+      case 'addNews':
+      case 'editNews':
+      case 'viewNews':
+        return <NewsModal />;
       case 'viewStudent': {
         // Hiển thị chi tiết học viên, có thể tái sử dụng StudentForm ở chế độ readOnly
         if (!student) return <div className="p-6">Đang tải...</div>;

@@ -85,7 +85,7 @@ const LessonGalleryModal = ({
             const lessonIdParam = String(lessonId);
             await LessonGalleryService.uploadLessonImage(lessonIdParam, selectedFile);
 
-            // Reset form
+            // Reset form và refresh danh sách ảnh
             setSelectedFile(null);
             if (document.getElementById('image-input')) {
                 document.getElementById('image-input').value = '';
@@ -93,8 +93,6 @@ const LessonGalleryModal = ({
 
             // Refresh danh sách ảnh
             await fetchImages();
-
-            alert('Upload ảnh thành công!');
         } catch (err) {
             console.error('Error uploading image:', err);
             setError('Không thể upload ảnh. Vui lòng thử lại.');
@@ -111,10 +109,9 @@ const LessonGalleryModal = ({
         try {
             await LessonGalleryService.deleteLessonImage(imageId);
             await fetchImages();
-            alert('Xóa ảnh thành công!');
         } catch (err) {
             console.error('Error deleting image:', err);
-            alert('Không thể xóa ảnh. Vui lòng thử lại.');
+            setError('Không thể xóa ảnh. Vui lòng thử lại.');
         }
     };
 

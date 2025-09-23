@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ClassService } from '../services/ClassService';
 import { LessonService } from '../services/LessonService';
+import AttendanceService from '../services/AttendanceService';
 
 const StudentSelectionModal = ({
     isOpen,
@@ -15,88 +16,22 @@ const StudentSelectionModal = ({
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [error, setError] = useState('');
 
+    // Sử dụng danh sách học sinh từ props thay vì fetch lại
     useEffect(() => {
-        if (isOpen && lessonId && classInfo) {
-            fetchStudents();
-        }
-    }, [isOpen, lessonId, classInfo]);
-
-    const fetchStudents = async () => {
-        setLoadingStudents(true);
-        setError('');
-
-        try {
-            // Lấy thông tin lớp từ classInfo (giống như phần điểm danh)
-            const classId = classInfo.id;
-            if (!classId) {
-                setError('Không tìm thấy thông tin lớp');
-                return;
-            }
-
-            console.log(`Fetching students for class ${classId} using /back-office/classes/${classId}`);
-            const detail = await ClassService.getClassById(classId);
-            console.log('Class detail response:', detail);
-
-            // Lấy danh sách học viên từ response
-            const classStudents = Array.isArray(detail.data?.students)
-                ? detail.data.students
-                : Array.isArray(detail.students)
-                    ? detail.students
-                    : [];
-
-            console.log(`Found ${classStudents.length} students in class ${classId}`);
-
-            // Thêm thông tin lớp vào mỗi học viên
-            const studentsWithClass = classStudents.map(student => ({
-                ...student,
-                classInfo: {
-                    id: classId,
-                    name: detail.data?.name || detail.name || 'Lớp không rõ'
-                }
-            }));
-
-            // Kiểm tra trạng thái đánh giá cho từng học viên
-            console.log('Checking evaluations for lessonId:', lessonId);
-            const studentsWithEvaluationStatus = await Promise.all(
-                studentsWithClass.map(async (student) => {
-                    try {
-                        console.log('Checking evaluation for student:', student.id, student.name);
-                        const evaluation = await LessonService.getStudentLessonEvaluation(lessonId, student.id);
-                        console.log('Evaluation result for student', student.id, ':', evaluation);
-                        return {
-                            ...student,
-                            hasEvaluation: evaluation && evaluation.length > 0
-                        };
-                    } catch (error) {
-                        console.error(`Error checking evaluation for student ${student.id}:`, error);
-                        return {
-                            ...student,
-                            hasEvaluation: false
-                        };
-                    }
-                })
-            );
-
-            console.log('Final students with evaluation status:', studentsWithEvaluationStatus);
-            setStudents(studentsWithEvaluationStatus);
-        } catch (err) {
-            console.error('Error fetching students:', err);
-            setError('Không thể tải danh sách học viên');
-            setStudents([]);
-        } finally {
+        if (isOpen && classInfo?.students) {
+            setStudents(classInfo.students);
             setLoadingStudents(false);
         }
-    };
+    }, [isOpen, classInfo?.students]);
 
     const handleStudentClick = (student) => {
-        // Kiểm tra xem học viên đã được đánh giá chưa
-        if (lessonId && student.hasEvaluation) {
-            alert('Học viên này đã được đánh giá rồi!');
-            return;
+        // Chỉ cho phép đánh giá học viên có mặt hoặc đi trễ
+        if (student.attendance?.status === 'absent' || student.attendance?.status === 'excused') {
+            return; // Không làm gì nếu học sinh vắng mặt
         }
 
+        // Chỉ gọi onStudentSelect, không đóng modal
         onStudentSelect(student);
-        onClose();
     };
 
     if (!isOpen) return null;
@@ -134,10 +69,11 @@ const StudentSelectionModal = ({
                             {students.map((student, index) => (
                                 <div
                                     key={student.id || index}
-                                    className={`flex items-center justify-between p-4 border rounded-lg ${student.hasEvaluation
+                                    className={`flex items-center justify-between p-4 border rounded-lg ${
+                                        student.attendance?.status === 'absent' || student.attendance?.status === 'excused'
                                         ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
-                                        : 'border-gray-200 hover:bg-gray-50 cursor-pointer'
-                                        }`}
+                                        : 'border-gray-200 hover:bg-gray-50 cursor-pointer'                         
+                                    }`}
                                     onClick={() => handleStudentClick(student)}
                                 >
                                     <div className="flex items-center">
@@ -148,26 +84,20 @@ const StudentSelectionModal = ({
                                         </div>
                                         <div>
                                             <p className="font-medium text-gray-900">
-                                                {student.first_name && student.last_name
-                                                    ? `${student.first_name} ${student.last_name}`
-                                                    : student.identification_number || `Học viên ${index + 1}`
-                                                }
+                                                {`${student.first_name || ''} ${student.last_name || ''}`.trim() || 'Không có tên'}
                                             </p>
-                                            <p className="text-sm text-gray-500">
-                                                {student.classInfo?.name && `Lớp: ${student.classInfo.name}`} | {student.identification_number || 'Chưa có mã SV'}
-                                            </p>
+                                            <div className="text-sm text-gray-500 space-y-1">
+                                                <p>MSSV: {student.identification_number || 'Chưa có'}</p>
+                                                <p>Email: {student.email || 'Chưa có'}</p>
+                                                {student.phone_number && <p>SĐT: {student.phone_number}</p>}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center">
-                                        {lessonId && student.hasEvaluation ? (
-                                            <div className="px-3 py-1 rounded-full bg-green-50 text-green-600 text-xs font-medium">
-                                                ✅ Đã đánh giá
-                                            </div>
-                                        ) : (
-                                            <div className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-medium">
-                                                Bấm để đánh giá
-                                            </div>
-                                        )}
+                                    <div className="flex items-center space-x-2">
+                                        {/* Hiển thị nút đánh giá */}
+                                        <button className="px-4 py-1.5 rounded-full text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                                            Bấm để đánh giá
+                                        </button>
                                     </div>
                                 </div>
                             ))}

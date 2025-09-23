@@ -8,6 +8,8 @@ import courseReducer from '../slices/courseSlice';
 import studentReducer from '../slices/studentSlice';
 import modalReducer from '../slices/modalSlice';
 import moduleReducer from '../slices/moduleSlice';
+import studentRegistrationReducer from '../slices/studentRegistrationSlice';
+import newsReducer from '../slices/newsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +22,8 @@ export const store = configureStore({
     student: studentReducer,
     modal: modalReducer,
     module: moduleReducer,
+    studentRegistration: studentRegistrationReducer,
+    news: newsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

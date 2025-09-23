@@ -22,10 +22,12 @@ import Lessons from '../pages/Lessons';
 import LessonDetail from '../pages/LessonDetail';
 import Profile from '../pages/Profile';
 import CalendarPage from '../pages/Calendar';
+import StudentRegistrations from '../pages/StudentRegistrations';
 
 // Layouts
 import MainLayout from '../layouts/MainLayout';
 import AuthLayout from '../layouts/AuthLayout';
+import News from '../pages/News';
 
 const AppRoutes = () => {
   return (
@@ -55,7 +57,9 @@ const AppRoutes = () => {
         <Route path="/lessons" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Lessons /></RoleBasedRoute>} />
         <Route path="/lessons/:id" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><LessonDetail /></RoleBasedRoute>} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/news" element={<RoleBasedRoute allowedRoles={['manager']}><News /></RoleBasedRoute>} />
         <Route path="/calendar" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><CalendarPage /></RoleBasedRoute>} />
+        <Route path="/student-registrations" element={<RoleBasedRoute allowedRoles={['manager']}><StudentRegistrations /></RoleBasedRoute>} />
 
         {/* Root-only routes */}
 

@@ -2,14 +2,14 @@ import axios from '../axiosConfig';
 
 class AttendanceService {
   // Lấy danh sách điểm danh cho một buổi học
-  static async getAttendances(lessonId) {
+  static async getAttendances(params = {}) {
     try {
+      // Đảm bảo params là object
+      const searchParams = typeof params === 'object' ? params : { lesson: params };
       
-      // // Kiểm tra xem API có tồn tại không bằng cách gọi với timeout ngắn
       const response = await axios.get('/back-office/attendances', {
-        params: { lesson: lessonId },
+        params: searchParams,
       });
-      
       
       // Kiểm tra response status
       if (response.status >= 200 && response.status < 300) {
@@ -20,10 +20,6 @@ class AttendanceService {
       
     } catch (error) {
       console.error('Error fetching attendances from /back-office/attendances:', error);
-      
-      
-      
-      // Không throw error để tránh logout, chỉ return empty array
       return [];
     }
   }

@@ -5,6 +5,7 @@ import Modal from '../components/Modal';
 import Table from '../components/Table';
 import { ButtonAction } from '../components/Table';
 import { toast } from 'react-toastify';
+import LessonDocumentationModal from '../components/LessonDocumentation/LessonDocumentationModal';
 
 const Lessons = () => {
   const user = useSelector(state => state.auth.user);
@@ -18,6 +19,8 @@ const Lessons = () => {
   const [modules, setModules] = useState([]); // TODO: fetch modules for filter & select
   const [classes, setClasses] = useState([]); // Lấy classes để hiển thị tên lớp
   const [filterModule, setFilterModule] = useState('');
+  const [showDocumentationModal, setShowDocumentationModal] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState(null);
 
 
   // Fetch modules và classes từ API thực tế
@@ -184,8 +187,13 @@ const Lessons = () => {
               </ButtonAction>
             </>
           )}
-
-
+          <ButtonAction color="blue" onClick={() => {
+            setSelectedLesson(item);
+            setShowDocumentationModal(true);
+          }}>
+            <span className="sm:hidden">📚</span>
+            <span className="hidden sm:inline">Tài liệu</span>
+          </ButtonAction>
         </div>
       ),
     },
@@ -249,6 +257,16 @@ const Lessons = () => {
         </form>
       </Modal>
 
+      {/* Documentation Modal */}
+      <LessonDocumentationModal
+        isOpen={showDocumentationModal}
+        onClose={() => {
+          setShowDocumentationModal(false);
+          setSelectedLesson(null);
+        }}
+        lessonId={selectedLesson?.id}
+        title={`Quản lý tài liệu - ${selectedLesson?.name || ''}`}
+      />
     </div>
   );
 };

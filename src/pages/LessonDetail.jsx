@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { LessonService } from '../services/LessonService';
-import { ClassService } from '../services/ClassService';
 import AttendanceService from '../services/AttendanceService';
+import ClassService from '../services/ClassService';
 import { format } from 'date-fns';
 import StudentSelectionModal from '../components/StudentSelectionModal';
 import LessonEvaluationForm from '../components/LessonEvaluation/LessonEvaluationForm';
 import LessonGalleryModal from '../components/LessonGalleryModal';
+import LessonDocumentationModal from '../components/LessonDocumentation/LessonDocumentationModal';
 
 const LessonDetail = () => {
     const { id } = useParams();
@@ -30,6 +31,7 @@ const LessonDetail = () => {
     const [showEvaluationForm, setShowEvaluationForm] = useState(false);
     const [selectedStudentForEvaluation, setSelectedStudentForEvaluation] = useState(null);
     const [showGalleryModal, setShowGalleryModal] = useState(false);
+    const [showDocumentationModal, setShowDocumentationModal] = useState(false);
 
     useEffect(() => {
         const fetchLessonDetail = async () => {
@@ -38,33 +40,24 @@ const LessonDetail = () => {
             setLoading(true);
             try {
                 // Lấy thông tin lesson từ state hoặc localStorage nếu có
-                // Nếu không có, thì mới gọi API
                 const storedLesson = localStorage.getItem(`lesson_${id}`);
+                let lessonData;
+                
                 if (storedLesson) {
-                    const lessonData = JSON.parse(storedLesson);
+                    lessonData = JSON.parse(storedLesson);
                     setLesson(lessonData);
-
-                    // Gọi API để lấy thông tin lớp dựa trên module
-                    if (lessonData.module) {
-                        await fetchClassInfo(lessonData.module);
-                    }
-
-                    // Kiểm tra trạng thái check-in
-                    await checkCheckInStatus(lessonData.id);
-
-                    setLoading(false);
-                    return;
+                } else {
+                    // Fallback: Gọi API nếu không có data sẵn
+                    lessonData = await LessonService.getLessonById(id);
+                    setLesson(lessonData);
                 }
-
-                // Fallback: Gọi API nếu không có data sẵn
-                const lessonData = await LessonService.getLessonById(id);
-                setLesson(lessonData);
 
                 // Gọi API để lấy thông tin lớp dựa trên module
                 if (lessonData.module) {
                     await fetchClassInfo(lessonData.module);
                 }
 
+                // Kiểm tra trạng thái check-in
                 await checkCheckInStatus(lessonData.id);
             } catch (error) {
                 console.error('Error fetching lesson detail:', error);
@@ -115,30 +108,60 @@ const LessonDetail = () => {
                 setCheckInInfo(null);
             }
         } catch (error) {
-            console.error('Error checking check-in status:', error);
             setCheckInInfo(null);
         }
     };
 
     // Lấy danh sách điểm danh cho buổi học
     const fetchAttendances = async (lessonId) => {
-        if (!lessonId) return;
+        if (!lessonId || !lesson?.class_room) return;
 
         try {
-            const attendanceData = await AttendanceService.getAttendances(lessonId);
+            // Lấy danh sách học sinh từ lớp học
+            const classStudentsData = await ClassService.getStudentsByClassroom(lesson.class_room);
+            
+            // Lấy danh sách điểm danh cho buổi học
+            const attendanceData = await AttendanceService.getAttendances({
+                lesson: lessonId,
+                classroom: lesson.class_room
+            });
 
-            // Xử lý response data
-            if (attendanceData && Array.isArray(attendanceData)) {
-                setAttendances(attendanceData);
-            } else if (attendanceData && attendanceData.data && Array.isArray(attendanceData.data)) {
-                setAttendances(attendanceData.data);
-            } else {
-                setAttendances([]);
-            }
+            // Xử lý và kết hợp dữ liệu
+            const processedAttendances = classStudentsData.map(student => {
+                // Tìm thông tin điểm danh của học sinh
+                const attendance = attendanceData.find(att => 
+                    (att.student && typeof att.student === 'object' && att.student.id === student.id) ||
+                    (att.student === student.id)
+                );
+
+                // Nếu có điểm danh, trả về thông tin điểm danh
+                if (attendance) {
+                    return {
+                        ...attendance,
+                        student: {
+                            ...student,
+                            ...attendance.student
+                        }
+                    };
+                }
+
+                // Nếu chưa có điểm danh, tạo bản ghi mới với trạng thái pending
+                return {
+                    student: student,
+                    lesson: lessonId,
+                    status: 'pending',
+                    note: '',
+                    check_in_time: null,
+                    is_evaluated: false
+                };
+            });
+
+            setAttendances(processedAttendances);
+            setClassStudents(classStudentsData);
         } catch (error) {
-            console.error('Error fetching attendances:', error);
-            // Không throw error để tránh logout, chỉ set empty array
+            console.error('Error fetching attendance data:', error);
             setAttendances([]);
+            setClassStudents([]);
         }
     };
 
@@ -156,19 +179,39 @@ const LessonDetail = () => {
         const timeDiff = lessonDate.getTime() - now.getTime();
         const minutesDiff = timeDiff / (1000 * 60);
 
+        // Trước 15 phút so với giờ bắt đầu
         if (minutesDiff > 15) {
-            return { canCheckIn: false, status: 'too-early', message: 'Chưa đến giờ check-in' };
-        } else {
-            // Cho phép check-in từ 15p trước trở đi (không giới hạn thời gian sau)
-            return { canCheckIn: true, status: 'ready', message: 'Có thể check-in' };
+            return { 
+                canCheckIn: false, 
+                status: 'too-early', 
+                message: 'Chưa đến giờ check-in',
+                isLate: false 
+            };
         }
+        
+        // Trong khoảng 15 phút trước giờ bắt đầu
+        if (minutesDiff >= 0) {
+            return { 
+                canCheckIn: true, 
+                status: 'ready', 
+                message: 'Có thể check-in',
+                isLate: false 
+            };
+        }
+        
+        // Sau giờ bắt đầu
+        return { 
+            canCheckIn: true, 
+            status: 'late', 
+            message: 'Check-in trễ',
+            isLate: true 
+        };
     };
 
     const handleCheckIn = async () => {
         const checkInStatus = getCheckInStatus();
 
         if (!checkInStatus.canCheckIn) {
-            alert(checkInStatus.message);
             return;
         }
 
@@ -177,44 +220,76 @@ const LessonDetail = () => {
                 lesson: parseInt(lesson.id),
                 teacher: user?.id,
                 checkin_type: 'teacher',
-                checkin_time: new Date().toISOString()
+                checkin_time: new Date().toISOString(),
+                is_late: checkInStatus.isLate // Thêm trạng thái trễ
             };
 
-
             await LessonService.createLessonCheckIn(checkInData);
-
-            alert('Check-in thành công!');
 
             // Refresh trạng thái check-in
             await checkCheckInStatus(lesson.id);
 
         } catch (error) {
             console.error('Error during check-in:', error);
-            alert('Có lỗi khi check-in. Vui lòng thử lại.');
         }
     };
 
     const handleAttendance = async () => {
-        if (!classInfo?.id) {
-            console.error('No course-module ID found');
-            return;
-        }
-
-        setShowAttendanceModal(true);
-        setLoadingStudents(true);
-
+        console.log("lesson?.class_room", classInfo)
+        
         try {
-            // Sử dụng course-module ID để lấy danh sách học sinh
-            const classData = await ClassService.getClassById(classInfo.id);
-            // Giả sử API trả về students trong class data
-            const students = classData.data?.students || classData.students || [];
-            setClassStudents(students);
+            // Hiển thị modal trước với trạng thái loading
+            setShowAttendanceModal(true);
+            setLoadingStudents(true);
+            
+            // Gọi các API song song để tăng tốc
+            const [classData, attendanceData] = await Promise.all([
+                ClassService.getClassById(classInfo.class_room),
+                AttendanceService.getAttendances({
+                    lesson: lesson.id,
+                    classroom: classInfo.class_room
+                })
+            ]);
 
-            // Lấy danh sách điểm danh
-            await fetchAttendances(lesson.id);
+            console.log("Data loaded:", { classData, attendanceData });
+
+            // Xử lý dữ liệu học sinh và điểm danh
+            const students = classData.data.students || [];
+            const processedAttendances = students.map(student => {
+                const attendance = attendanceData.find(att => 
+                    (att.student && typeof att.student === 'object' && att.student.id === student.id) ||
+                    (att.student === student.id)
+                );
+
+                if (attendance) {
+                    return {
+                        ...attendance,
+                        student: {
+                            ...student,
+                            ...attendance.student
+                        }
+                    };
+                }
+
+                return {
+                    student: student,
+                    lesson: lesson.id,
+                    status: 'pending',
+                    note: '',
+                    check_in_time: null,
+                    is_evaluated: false
+                };
+            });
+
+            // Cập nhật state
+            setClassStudents(students);
+            setAttendances(processedAttendances);
+            
         } catch (error) {
-            console.error('Error fetching course-module students:', error);
+            console.error('Error fetching data:', error);
             setClassStudents([]);
+            setAttendances([]);
+            alert('Có lỗi khi tải dữ liệu lớp học và điểm danh');
         } finally {
             setLoadingStudents(false);
         }
@@ -257,9 +332,80 @@ const LessonDetail = () => {
         }
     };
 
-    const handleEvaluation = () => {
-        // Open student selection modal instead of navigating to evaluation page
-        setShowStudentSelectionModal(true);
+    // Kiểm tra xem đã đủ thời gian để đánh giá chưa (120 phút từ khi bắt đầu)
+    const getEvaluationStatus = () => {
+        if (!lesson?.schedule?.start_date || !lesson?.schedule?.start_time) {
+            return { canEvaluate: false, message: 'Chưa có lịch học' };
+        }
+
+        const now = new Date();
+        const lessonStartTime = new Date(lesson.schedule.start_date);
+        const [hours, minutes] = lesson.schedule.start_time.split(':');
+        lessonStartTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+        // Tính thời gian đã trôi qua kể từ khi bắt đầu (phút)
+        const timeDiff = (now.getTime() - lessonStartTime.getTime()) / (1000 * 60);
+
+        if (timeDiff < 120) {
+            const remainingMinutes = Math.ceil(120 - timeDiff);
+            return { 
+                canEvaluate: false, 
+                message: `Còn ${remainingMinutes} phút nữa mới có thể đánh giá` 
+            };
+        }
+
+        return { canEvaluate: true, message: 'Có thể đánh giá' };
+    };
+
+    const handleEvaluation = async () => {
+        console.log("classInfo for evaluation:", classInfo);
+        
+        const evaluationStatus = getEvaluationStatus();
+        if (!evaluationStatus.canEvaluate) {
+            return;
+        }
+
+        try {
+            // Hiển thị modal trước với trạng thái loading
+            setShowStudentSelectionModal(true);
+            setLoadingStudents(true);
+            
+            // Gọi các API song song để tăng tốc
+            const [classData, attendanceData] = await Promise.all([
+                ClassService.getClassById(classInfo.class_room),
+                AttendanceService.getAttendances({
+                    lesson: lesson.id,
+                    classroom: classInfo.class_room
+                })
+            ]);
+
+            console.log("Data loaded for evaluation:", { classData, attendanceData });
+
+            // Xử lý dữ liệu học sinh và điểm danh
+            const students = classData.data.students || [];
+            const processedStudents = students.map(student => {
+                const attendance = attendanceData.find(att => 
+                    (att.student && typeof att.student === 'object' && att.student.id === student.id) ||
+                    (att.student === student.id)
+                );
+
+                return {
+                    ...student,
+                    attendance: attendance || null,
+                    classInfo: classInfo
+                };
+            });
+
+            // Cập nhật state
+            setClassStudents(processedStudents);
+            
+        } catch (error) {
+            console.error('Error fetching data for evaluation:', error);
+            alert('Có lỗi khi tải dữ liệu học sinh');
+            setShowStudentSelectionModal(false);
+        } finally {
+            setLoadingStudents(false);
+        }
     };
 
     const handleStudentSelect = (student) => {
@@ -268,14 +414,19 @@ const LessonDetail = () => {
     };
 
     const handleEvaluationSubmit = (formData) => {
+        // Chỉ ẩn form đánh giá, giữ lại modal chọn học viên
         setShowEvaluationForm(false);
         setSelectedStudentForEvaluation(null);
-        // Có thể thêm thông báo thành công ở đây
+        // Hiện lại modal chọn học viên
+        setShowStudentSelectionModal(true);
     };
 
     const handleEvaluationBack = () => {
+        // Chỉ ẩn form đánh giá, giữ lại modal chọn học viên
         setShowEvaluationForm(false);
         setSelectedStudentForEvaluation(null);
+        // Hiện lại modal chọn học viên
+        setShowStudentSelectionModal(true);
     };
 
     const handleUploadImage = () => {
@@ -287,6 +438,30 @@ const LessonDetail = () => {
     const handleBack = () => {
         navigate(-1);
     };
+
+    // Gọi API attendance khi có thông tin lớp học và lesson
+    useEffect(() => {
+        const fetchInitialAttendance = async () => {
+            if (!lesson?.id || !classInfo?.class_room) return;
+
+            try {
+                console.log("Fetching initial attendance data...");
+                const attendanceData = await AttendanceService.getAttendances({
+                    lesson: lesson.id,
+                    classroom: classInfo.class_room
+                });
+                console.log("Initial attendance data:", attendanceData);
+
+                if (attendanceData && Array.isArray(attendanceData)) {
+                    setAttendances(attendanceData);
+                }
+            } catch (error) {
+                console.error('Error fetching initial attendance:', error);
+            }
+        };
+
+        fetchInitialAttendance();
+    }, [lesson?.id, classInfo?.class_room]);
 
     if (loading) {
         return (
@@ -378,21 +553,45 @@ const LessonDetail = () => {
                             let buttonClass = "flex flex-col items-center p-4 rounded-lg transition-colors ";
                             let icon = "📝";
                             let text = "Check in";
+                            let statusClass = "";
 
                             // Nếu đã check-in, hiển thị trạng thái đã check-in
                             if (checkInInfo) {
-                                buttonClass += "bg-green-50 border border-green-200 cursor-not-allowed opacity-80";
-                                icon = "✅";
-                                const checkInTime = new Date(checkInInfo.checkin_time).toLocaleString('vi-VN');
-                                text = `Đã check-in\n${checkInTime}`;
+                                const checkInTime = new Date(checkInInfo.checkin_time);
+                                const lessonStartTime = new Date(lesson.schedule.start_date);
+                                const [hours, minutes] = lesson.schedule.start_time.split(':');
+                                lessonStartTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                                
+                                // Kiểm tra xem có check in muộn không
+                                const isLateCheckIn = checkInTime > lessonStartTime;
+
+                                if (isLateCheckIn) {
+                                    buttonClass += "bg-red-50 border border-red-200 cursor-not-allowed";
+                                    icon = "⏰";
+                                    text = "Đã check-in (Trễ)";
+                                    statusClass = "text-xs text-red-600 mt-1";
+                                } else {
+                                    buttonClass += "bg-green-50 border border-green-200 cursor-not-allowed";
+                                    icon = "✅";
+                                    text = "Đã check-in";
+                                    statusClass = "text-xs text-green-600 mt-1";
+                                }
                             } else if (checkInStatus.canCheckIn) {
-                                buttonClass += "bg-yellow-50 border border-yellow-200 hover:bg-yellow-100";
-                                icon = "📝";
-                                text = "Check in";
+                                if (checkInStatus.isLate) {
+                                    buttonClass += "bg-orange-50 border border-orange-200 hover:bg-orange-100";
+                                    icon = "⏰";
+                                    text = "Check in";
+                                    statusClass = "text-xs text-orange-600 mt-1";
+                                } else {
+                                    buttonClass += "bg-indigo-600 hover:bg-indigo-700 text-white";
+                                    icon = "📝";
+                                    text = "Check in";
+                                }
                             } else {
-                                buttonClass += "bg-gray-50 border border-gray-200 cursor-not-allowed opacity-60";
+                                buttonClass += "bg-gray-100 border border-gray-200 cursor-not-allowed";
                                 icon = "⏰";
-                                text = checkInStatus.message;
+                                text = "Check in";
+                                statusClass = "text-xs text-gray-500 mt-1";
                             }
 
                             return (
@@ -400,12 +599,19 @@ const LessonDetail = () => {
                                     onClick={handleCheckIn}
                                     disabled={checkInInfo || !checkInStatus.canCheckIn}
                                     className={buttonClass}
-                                    title={checkInInfo ? `Đã check-in lúc ${new Date(checkInInfo.checkin_time).toLocaleString('vi-VN')}` : checkInStatus.message}
                                 >
                                     <div className="text-2xl mb-2">{icon}</div>
-                                    <span className={`font-medium text-sm ${checkInInfo ? 'text-green-800' : checkInStatus.canCheckIn ? 'text-yellow-800' : 'text-gray-600'}`}>
-                                        {text}
-                                    </span>
+                                    <span className="font-medium text-sm">{text}</span>
+                                    {statusClass && (
+                                        <div className={statusClass}>
+                                            {checkInInfo 
+                                                ? new Date(checkInInfo.checkin_time).toLocaleString('vi-VN')
+                                                : checkInStatus.isLate 
+                                                    ? "(Trễ)"
+                                                    : checkInStatus.message
+                                            }
+                                        </div>
+                                    )}
                                 </button>
                             );
                         })()}
@@ -425,32 +631,55 @@ const LessonDetail = () => {
                             </span>
                         </button>
 
-                        {/* Đánh giá - chỉ enable khi đã hoàn thành điểm danh */}
-                        <button
-                            onClick={checkInInfo && attendances.length > 0 ? handleEvaluation : undefined}
-                            disabled={!checkInInfo || attendances.length === 0}
-                            className={`flex flex-col items-center p-4 rounded-lg transition-colors ${checkInInfo && attendances.length > 0
-                                ? 'bg-yellow-50 border border-yellow-200 hover:bg-yellow-100'
-                                : 'bg-gray-50 border border-gray-200 cursor-not-allowed opacity-60'
-                                }`}
-                        >
-                            <div className="text-2xl mb-2">⭐</div>
-                            <span className={`font-medium ${checkInInfo && attendances.length > 0 ? 'text-yellow-800' : 'text-gray-600'}`}>
-                                Đánh giá
-                            </span>
-                        </button>
+                        {/* Đánh giá - chỉ enable khi đã có điểm danh và đủ thời gian */}
+                        {(() => {
+                            const evaluationStatus = getEvaluationStatus();
+                            let buttonClass = "flex flex-col items-center p-4 rounded-lg transition-colors ";
+                            let statusClass = "";
 
-                        {/* Up ảnh - chỉ enable khi đã hoàn thành điểm danh */}
+                            if (!attendances.length) {
+                                buttonClass += "bg-gray-100 border border-gray-200 cursor-not-allowed";
+                                statusClass = "text-xs text-gray-500 mt-1";
+                            } else if (!evaluationStatus.canEvaluate) {
+                                buttonClass += "bg-yellow-50 border border-yellow-200 cursor-not-allowed";
+                                statusClass = "text-xs text-yellow-600 mt-1";
+                            } else {
+                                buttonClass += "bg-indigo-600 hover:bg-indigo-700 text-white";
+                            }
+
+                            return (
+                                <button
+                                    onClick={attendances.length > 0 && evaluationStatus.canEvaluate ? handleEvaluation : undefined}
+                                    disabled={!attendances.length || !evaluationStatus.canEvaluate}
+                                    className={buttonClass}
+                                >
+                                    <div className="text-2xl mb-2">⭐</div>
+                                    <span className="font-medium text-sm">Đánh giá</span>
+                                    {statusClass && (
+                                        <div className={statusClass}>
+                                            {!attendances.length 
+                                                ? "Chưa điểm danh"
+                                                : !evaluationStatus.canEvaluate 
+                                                    ? evaluationStatus.message
+                                                    : ""
+                                            }
+                                        </div>
+                                    )}
+                                </button>
+                            );
+                        })()}
+
+                        {/* Up ảnh - chỉ enable khi đã có điểm danh */}
                         <button
-                            onClick={checkInInfo && attendances.length > 0 ? handleUploadImage : undefined}
-                            disabled={!checkInInfo || attendances.length === 0}
-                            className={`flex flex-col items-center p-4 rounded-lg transition-colors ${checkInInfo && attendances.length > 0
+                            onClick={attendances.length > 0 ? handleUploadImage : undefined}
+                            disabled={attendances.length === 0}
+                            className={`flex flex-col items-center p-4 rounded-lg transition-colors ${attendances.length > 0
                                 ? 'bg-purple-50 border border-purple-200 hover:bg-purple-100'
                                 : 'bg-gray-50 border border-gray-200 cursor-not-allowed opacity-60'
                                 }`}
                         >
                             <div className="text-2xl mb-2">📸</div>
-                            <span className={`font-medium ${checkInInfo && attendances.length > 0 ? 'text-purple-800' : 'text-gray-600'}`}>
+                            <span className={`font-medium ${attendances.length > 0 ? 'text-purple-800' : 'text-gray-600'}`}>
                                 Up ảnh
                             </span>
                         </button>
@@ -461,14 +690,6 @@ const LessonDetail = () => {
 
                 {/* Additional Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white rounded-xl shadow-sm p-6">
-                        <div className="flex items-center mb-4">
-                            <div className="text-2xl mr-3">📚</div>
-                            <h4 className="font-semibold text-gray-900">Giáo trình, Giáo án</h4>
-                        </div>
-                        <p className="text-gray-600 text-sm">Nội dung chuẩn bị trước buổi dạy</p>
-                    </div>
-
                     <div className="bg-white rounded-xl shadow-sm p-6">
                         <div className="flex items-center mb-4">
                             <div className="text-2xl mr-3">⭐</div>
@@ -531,6 +752,7 @@ const LessonDetail = () => {
                                             </div>
                                             <div className="flex items-center">
                                                 {(() => {
+                                                    console.log("attendances", attendances)
                                                     // Sửa logic mapping: API trả về student là object, không phải number
                                                     const studentAttendance = attendances.find(att =>
                                                         (att.student && typeof att.student === 'object' && att.student.id === student.id) ||
@@ -544,7 +766,7 @@ const LessonDetail = () => {
                                                             'late': { text: '⏰ Đi muộn', color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
                                                             'excused': { text: '📄 Được phép nghỉ', color: 'text-blue-600', bgColor: 'bg-blue-50' }
                                                         };
-                                                        const status = statusMap[studentAttendance.status] || { text: '❓ Không xác định', color: 'text-gray-600', bgColor: 'bg-gray-50' };
+                                                        const status = statusMap[studentAttendance.status] || { text: 'Chưa điểm danh', color: 'text-gray-600', bgColor: 'bg-gray-50' };
                                                         return (
                                                             <div className={`px-3 py-1 rounded-full ${status.bgColor} ${status.color} text-xs font-medium`}>
                                                                 {status.text}
@@ -687,7 +909,10 @@ const LessonDetail = () => {
                 onStudentSelect={handleStudentSelect}
                 lessonId={id}
                 currentLesson={lesson}
-                classInfo={classInfo}
+                classInfo={{
+                    ...classInfo,
+                    students: classStudents
+                }}
                 title="Chọn học viên để đánh giá"
             />
 
@@ -699,7 +924,6 @@ const LessonDetail = () => {
                             <h2 className="text-xl font-semibold text-gray-900">Đánh giá học viên</h2>
                             <button
                                 onClick={handleEvaluationBack}
-                                className="text-gray-400 hover:text-gray-600 focus:outline-none"
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -726,6 +950,14 @@ const LessonDetail = () => {
                 onClose={() => setShowGalleryModal(false)}
                 lessonId={lesson?.id || id}
                 title="Quản lý ảnh buổi học"
+            />
+
+            {/* Documentation Modal */}
+            <LessonDocumentationModal
+                isOpen={showDocumentationModal}
+                onClose={() => setShowDocumentationModal(false)}
+                lessonId={lesson?.id || id}
+                title="Quản lý tài liệu buổi học"
             />
         </div>
     );
