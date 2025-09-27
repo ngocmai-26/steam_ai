@@ -268,13 +268,107 @@ const COURSE_REGISTRATION_URL = '/back-office/course-registrations';
 export class CourseRegistrationService {
   // Lấy danh sách đăng ký (có thể filter theo student, class_room, status)
   static async getRegistrations(params = {}) {
-    const response = await axios.get(COURSE_REGISTRATION_URL, { params });
-    return response.data.data; // trả về mảng đăng ký
+    try {
+      const response = await axios.get(COURSE_REGISTRATION_URL, { params });
+      return response.data?.data || response.data || []; // trả về mảng đăng ký
+    } catch (error) {
+      console.error('Error fetching registrations:', error);
+      throw error;
+    }
   }
 
   // Đăng ký lớp học mới
   static async createRegistration(data) {
-    const response = await axios.post(COURSE_REGISTRATION_URL, data);
-    return response.data.data; // trả về object đăng ký vừa tạo
+    try {
+      // Format data theo API mới
+      const registrationData = {
+        student: data.student,
+        class_room: data.class_room,
+        note: data.note || '',
+        amount: data.amount || '0',
+        contact_for_anonymous: {
+          student_name: data.contact_for_anonymous?.student_name || '',
+          parent_name: data.contact_for_anonymous?.parent_name || '',
+          parent_phone: data.contact_for_anonymous?.parent_phone || '',
+          parent_email: data.contact_for_anonymous?.parent_email || ''
+        }
+      };
+
+      const response = await axios.post(COURSE_REGISTRATION_URL, registrationData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return response.data?.data || response.data; // trả về object đăng ký vừa tạo
+    } catch (error) {
+      console.error('Error creating registration:', error);
+
+      // Handle validation errors specifically
+      if (error.response?.status === 400) {
+        const errorData = error.response.data;
+        if (errorData?.contact_for_anonymous) {
+          // Extract validation errors from nested structure
+          const validationErrors = [];
+          for (const [field, errors] of Object.entries(errorData.contact_for_anonymous)) {
+            if (Array.isArray(errors) && errors.length > 0) {
+              validationErrors.push(...errors);
+            }
+          }
+          if (validationErrors.length > 0) {
+            throw new Error(validationErrors.join(', '));
+          }
+        }
+        if (errorData?.message) {
+          throw new Error(errorData.message);
+        }
+      }
+
+      // Re-throw error with more context
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else if (error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      } else if (error.message) {
+        throw new Error(error.message);
+      } else {
+        throw new Error('Có lỗi xảy ra khi đăng ký lớp học');
+      }
+    }
+  }
+
+  // Hủy đăng ký lớp học
+  static async cancelRegistration(registrationId) {
+    try {
+      const response = await axios.delete(`${COURSE_REGISTRATION_URL}/${registrationId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error canceling registration:', error);
+      // Re-throw error with more context
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else if (error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      } else if (error.message) {
+        throw new Error(error.message);
+      } else {
+        throw new Error('Có lỗi xảy ra khi hủy đăng ký lớp học');
+      }
+    }
+  }
+
+  // Tìm registration ID dựa trên student và class
+  static async findRegistration(studentId, classId) {
+    try {
+      const registrations = await this.getRegistrations({ student: studentId });
+      const registration = registrations.find(reg => {
+        const regClassId = typeof reg.class_room === 'object' ? reg.class_room.id : reg.class_room;
+        return regClassId === classId && ['approved', 'pending'].includes(reg.status);
+      });
+      return registration;
+    } catch (error) {
+      console.error('Error finding registration:', error);
+      throw error;
+    }
   }
 } 

@@ -5,6 +5,7 @@ import { registerStudentToClass, unregisterStudentFromClass } from '../slices/st
 import { CourseRegistrationService } from '../services/ClassService';
 import { useDispatch as useReduxDispatch } from 'react-redux';
 import { fetchClasses } from '../thunks/classThunks';
+import { toast } from 'react-toastify';
 
 const StudentClassRegistration = () => {
   const dispatch = useDispatch();
@@ -12,13 +13,22 @@ const StudentClassRegistration = () => {
   const classes = useSelector(state => state.class.classes);
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [registrations, setRegistrations] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUnregistering, setIsUnregistering] = useState(false);
   const reduxDispatch = useReduxDispatch();
 
   useEffect(() => {
     reduxDispatch(fetchClasses());
     if (currentStudent?.id) {
       CourseRegistrationService.getRegistrations({ student: currentStudent.id })
-        .then(data => setRegistrations(data || []));
+        .then(data => setRegistrations(data || []))
+        .catch(error => {
+          console.error('Error loading registrations:', error);
+          toast.error('Không thể tải danh sách đăng ký');
+          setRegistrations([]);
+        });
+    } else {
+      setRegistrations([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStudent?.id]);
@@ -32,23 +42,98 @@ const StudentClassRegistration = () => {
   };
 
   const handleRegister = async (courseId, classId) => {
-    if (!currentStudent?.id) return;
-    await CourseRegistrationService.createRegistration({
-      student: currentStudent.id,
-      class_room: classId,
-      amount: '0', // hoặc truyền số tiền nếu có
-      note: ''
-    });
-    // Reload lại danh sách đăng ký
-    const data = await CourseRegistrationService.getRegistrations({ student: currentStudent.id });
-    setRegistrations(data || []);
+    if (!currentStudent?.id || isSubmitting) return;
+
+    // Validation cơ bản
+    if (!currentStudent.first_name || !currentStudent.last_name) {
+      toast.error('Thông tin học viên không đầy đủ');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await CourseRegistrationService.createRegistration({
+        student: currentStudent.id,
+        class_room: classId,
+        amount: '0',
+        note: '',
+        contact_for_anonymous: {
+          student_name: `${currentStudent.first_name} ${currentStudent.last_name}`,
+          parent_name: currentStudent?.parent_name || '',
+          parent_phone: currentStudent?.parent_phone || '',
+          parent_email: currentStudent?.parent_email || ''
+        }
+      });
+
+      toast.success('Đăng ký lớp học thành công!');
+
+      // Reload lại danh sách đăng ký
+      const data = await CourseRegistrationService.getRegistrations({ student: currentStudent.id });
+      setRegistrations(data || []);
+    } catch (error) {
+      console.error('Error registering for class:', error);
+
+      // Hiển thị thông báo lỗi cụ thể
+      if (error.message?.includes('500')) {
+        toast.error('Máy chủ đang gặp sự cố. Vui lòng thử lại sau.');
+      } else if (error.message?.includes('400')) {
+        toast.error('Thông tin đăng ký không hợp lệ.');
+      } else if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error('Có lỗi xảy ra khi đăng ký lớp học');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleUnregister = (classId) => {
-    dispatch(unregisterStudentFromClass({
-      studentId: currentStudent.id,
-      classId
-    }));
+  const handleUnregister = async (classId) => {
+    if (!currentStudent?.id || isUnregistering) return;
+
+    setIsUnregistering(true);
+    try {
+      // Tìm registration record trước
+      const registration = await CourseRegistrationService.findRegistration(currentStudent.id, classId);
+
+      if (!registration) {
+        toast.error('Không tìm thấy thông tin đăng ký để hủy');
+        return;
+      }
+
+      // Gọi API để hủy đăng ký
+      await CourseRegistrationService.cancelRegistration(registration.id);
+
+      toast.success('Đã hủy đăng ký lớp học thành công!');
+
+      // Reload lại danh sách đăng ký
+      const data = await CourseRegistrationService.getRegistrations({ student: currentStudent.id });
+      setRegistrations(data || []);
+
+      // Cập nhật Redux state (nếu cần)
+      dispatch(unregisterStudentFromClass({
+        studentId: currentStudent.id,
+        classId
+      }));
+
+    } catch (error) {
+      console.error('Error unregistering from class:', error);
+
+      // Hiển thị thông báo lỗi cụ thể
+      if (error.message?.includes('500')) {
+        toast.error('Máy chủ đang gặp sự cố. Vui lòng thử lại sau.');
+      } else if (error.message?.includes('404')) {
+        toast.error('Không tìm thấy thông tin đăng ký để hủy.');
+      } else if (error.message?.includes('403')) {
+        toast.error('Không có quyền hủy đăng ký này.');
+      } else if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error('Có lỗi xảy ra khi hủy đăng ký lớp học');
+      }
+    } finally {
+      setIsUnregistering(false);
+    }
   };
 
   const formatSchedule = (schedule) => {
@@ -178,21 +263,26 @@ const StudentClassRegistration = () => {
                         {registered ? (
                           <button
                             onClick={() => handleUnregister(classItem.id)}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            disabled={isUnregistering}
+                            className={`inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md
+                              ${isUnregistering
+                                ? 'bg-gray-400 cursor-not-allowed text-gray-600'
+                                : 'text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'
+                              }`}
                           >
-                            Hủy đăng ký
+                            {isUnregistering ? 'Đang hủy...' : 'Hủy đăng ký'}
                           </button>
                         ) : (
                           <button
                             onClick={() => handleRegister(classItem.course_id, classItem.id)}
-                            disabled={isFull}
+                            disabled={isFull || isSubmitting}
                             className={`inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md
-                              ${isFull
+                              ${isFull || isSubmitting
                                 ? 'bg-gray-300 cursor-not-allowed text-gray-500'
                                 : 'text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
                               }`}
                           >
-                            Đăng ký
+                            {isSubmitting ? 'Đang đăng ký...' : 'Đăng ký'}
                           </button>
                         )}
                       </div>
@@ -204,6 +294,7 @@ const StudentClassRegistration = () => {
           )}
         </div>
       </div>
+
     </div>
   );
 };
