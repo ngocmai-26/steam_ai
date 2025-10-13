@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutThunk } from '../thunks/AuthThunks';
 import { selectUser } from '../slices/authSlice';
+import { HiUser, HiLogout } from 'react-icons/hi';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -197,18 +198,21 @@ const Navbar = () => {
                       navigate('/profile');
                       setIsUserMenuOpen(false);
                     }}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="flex items-center w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                   >
-                    👤 Xem hồ sơ
+                    <HiUser className="w-4 h-4 mr-3 text-gray-500" />
+                    <span className="font-medium">Xem hồ sơ</span>
                   </button>
+                  <div className="border-t border-gray-100 my-1"></div>
                   <button
                     onClick={() => {
                       handleLogout();
                       setIsUserMenuOpen(false);
                     }}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="flex items-center w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
                   >
-                    🚪 Đăng xuất
+                    <HiLogout className="w-4 h-4 mr-3 text-red-500" />
+                    <span className="font-medium">Đăng xuất</span>
                   </button>
                 </div>
               )}
@@ -279,18 +283,20 @@ const Navbar = () => {
                     navigate('/profile');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 mb-2"
+                  className="flex items-center w-full text-left px-4 py-3 rounded-lg text-base font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 mb-3 transition-colors duration-200"
                 >
-                  👤 Xem hồ sơ
+                  <HiUser className="w-5 h-5 mr-3 text-gray-500" />
+                  <span>Xem hồ sơ</span>
                 </button>
                 <button
                   onClick={() => {
                     handleLogout();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                  className="flex items-center w-full text-left px-4 py-3 rounded-lg text-base font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-200"
                 >
-                  🚪 Đăng xuất
+                  <HiLogout className="w-5 h-5 mr-3" />
+                  <span>Đăng xuất</span>
                 </button>
               </div>
             </div>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import Table from '../components/Table';
+import Table, { ButtonAction } from '../components/Table';
 import Modal from '../components/Modal';
 import CreateUser from './CreateUser';
 import { fetchUsers, setFilters, clearError } from '../slices/userSlice';
+import { HiPencil } from 'react-icons/hi';
 
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -20,6 +21,8 @@ const Accounts = () => {
   const dispatch = useDispatch();
   const { users, loading, error, filters } = useSelector((state) => state.users);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const isMobile = useIsMobile();
 
 
@@ -62,6 +65,22 @@ const Accounts = () => {
     dispatch(fetchUsers(filters)); // Refresh danh sách sau khi tạo thành công
   };
 
+  const handleEditUser = (user) => {
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditModalOpen(false);
+    setSelectedUser(null);
+    dispatch(fetchUsers(filters)); // Refresh danh sách sau khi sửa thành công
+  };
+
+  const handleEditClose = () => {
+    setIsEditModalOpen(false);
+    setSelectedUser(null);
+  };
+
   const formatRole = (role) => {
     const roleMap = {
       'root': 'Quản trị hệ thống',
@@ -94,6 +113,22 @@ const Accounts = () => {
     phone: user.phone || 'N/A'
   }));
 
+  // Actions cho table
+  const renderActions = (user) => (
+    <div className="flex space-x-2">
+      <ButtonAction
+        onClick={(e) => {
+          e.stopPropagation();
+          handleEditUser(user);
+        }}
+        color="indigo"
+        title="Sửa tài khoản"
+      >
+        <HiPencil className="w-4 h-4" />
+      </ButtonAction>
+    </div>
+  );
+
   return (
     <div className="p-2 md:p-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 gap-2 md:gap-0">
@@ -106,10 +141,7 @@ const Accounts = () => {
         </button>
       </div>
 
-      {/* Debug info */}
-      <div className="mb-2 md:mb-4 p-2 md:p-4 bg-gray-100 rounded text-xs md:text-base">
-        <p>Debug: Users count: {users.length}, Loading: {loading.toString()}, Error: {error || 'none'}</p>
-      </div>
+     
 
       {/* Filters */}
       <div className="mb-4 md:mb-6 grid grid-cols-1 gap-2 md:grid-cols-4 md:gap-4">
@@ -179,7 +211,16 @@ const Accounts = () => {
           ) : (
             tableData.map((user) => (
               <div key={user.id} className="bg-white rounded-lg shadow p-4 flex flex-col gap-1 border border-gray-100">
-                <div className="font-semibold text-base">{user.name}</div>
+                <div className="flex justify-between items-start">
+                  <div className="font-semibold text-base">{user.name}</div>
+                  <button
+                    onClick={() => handleEditUser(user)}
+                    className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                    title="Sửa tài khoản"
+                  >
+                    <HiPencil className="w-4 h-4" />
+                  </button>
+                </div>
                 <div className="text-xs text-gray-600">Email: {user.email}</div>
                 <div className="text-xs text-gray-600">SĐT: {user.phone}</div>
                 <div className="text-xs text-gray-600">Vai trò: <span className="font-medium">{user.role}</span></div>
@@ -195,6 +236,7 @@ const Accounts = () => {
           data={tableData}
           isLoading={loading}
           emptyMessage="Không có tài khoản nào"
+          actions={renderActions}
         />
       )}
 
@@ -205,6 +247,19 @@ const Accounts = () => {
         size="lg"
       >
         <CreateUser onSuccess={handleCreateSuccess} />
+      </Modal>
+
+      {/* Modal sửa tài khoản */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={handleEditClose}
+        size="lg"
+      >
+        <CreateUser 
+          user={selectedUser} 
+          onSuccess={handleEditSuccess} 
+          mode="edit"
+        />
       </Modal>
     </div>
   );

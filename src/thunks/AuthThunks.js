@@ -64,6 +64,13 @@ export const loginThunk = ({ email, password }) => async (dispatch) => {
 
   } catch (error) {
     const message = getErrorMessage(error);
+    
+    // Kiểm tra nếu là lỗi account_unverify
+    if (error.response?.data?.code === 'account_unverify') {
+      dispatch(setAlert({ message: 'Tài khoản chưa được xác thực', type: 'warning' }));
+      return { verificationRequired: true, email: email };
+    }
+    
     dispatch(setAlert({ message, type: 'error' }));
     dispatch(setError(message));
     throw new Error(message);

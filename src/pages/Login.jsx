@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { loginThunk } from '../thunks/AuthThunks';
+import { HiEye, HiEyeOff } from 'react-icons/hi';
+import OTPModal from '../components/OTPModal';
 
 // Fake account for testing
 const FAKE_ACCOUNT = {
@@ -23,6 +25,9 @@ const Login = () => {
     password: '',
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showOTPModal, setShowOTPModal] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState('');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -47,8 +52,9 @@ const Login = () => {
     try {
       const result = await dispatch(loginThunk(formData));
       if (result.verificationRequired) {
-        toast.info('Please verify your account.');
-        navigate('/verify', { state: { email: result.email } });
+        setPendingEmail(result.email);
+        setShowOTPModal(true);
+        toast.info('Vui lòng xác thực tài khoản bằng mã OTP');
       } else {
         toast.success('Đăng nhập thành công!');
       }
@@ -57,6 +63,17 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOTPSuccess = () => {
+    toast.success('Xác thực thành công! Đăng nhập hoàn tất.');
+    setShowOTPModal(false);
+    setPendingEmail('');
+  };
+
+  const handleOTPClose = () => {
+    setShowOTPModal(false);
+    setPendingEmail('');
   };
 
   return (
@@ -92,17 +109,30 @@ const Login = () => {
               <label htmlFor="password" className="sr-only">
                 Mật khẩu
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Mật khẩu"
-                value={formData.password}
-                onChange={handleInputChange}
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  placeholder="Mật khẩu"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <HiEyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <HiEye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -146,6 +176,14 @@ const Login = () => {
           </div>
         </form>
       </div>
+      
+      {/* OTP Modal */}
+      <OTPModal
+        isOpen={showOTPModal}
+        onClose={handleOTPClose}
+        email={pendingEmail}
+        onSuccess={handleOTPSuccess}
+      />
     </div>
   );
 };
