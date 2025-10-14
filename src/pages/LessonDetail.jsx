@@ -172,38 +172,58 @@ const LessonDetail = () => {
         }
 
         const now = new Date();
-        const lessonDate = new Date(lesson.schedule.start_date);
-        const [hours, minutes] = lesson.schedule.start_time.split(':');
-        lessonDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        
+        // Parse thời gian từ API - có thể có format khác nhau
+        let lessonStartTime;
+        
+        // Thử parse từ start_datetime trước (format ISO)
+        if (lesson.start_datetime) {
+            lessonStartTime = new Date(lesson.start_datetime);
+        } else {
+            // Fallback: parse từ schedule.start_date và start_time
+            const lessonDate = new Date(lesson.schedule.start_date);
+            const [hours, minutes] = lesson.schedule.start_time.split(':');
+            lessonDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            lessonStartTime = lessonDate;
+        }
 
-        const timeDiff = lessonDate.getTime() - now.getTime();
+        const timeDiff = lessonStartTime.getTime() - now.getTime();
         const minutesDiff = timeDiff / (1000 * 60);
 
-        // Trước 15 phút so với giờ bắt đầu
-        if (minutesDiff > 15) {
-            return { 
-                canCheckIn: false, 
-                status: 'too-early', 
-                message: 'Chưa đến giờ check-in',
-                isLate: false 
-            };
-        }
-        
-        // Trong khoảng 15 phút trước giờ bắt đầu
-        if (minutesDiff >= 0) {
+        // Debug log để kiểm tra
+        console.log('Time Debug:', {
+            now: now.toLocaleString('vi-VN'),
+            lessonStartTime: lessonStartTime.toLocaleString('vi-VN'),
+            minutesDiff: minutesDiff,
+            canCheckIn: minutesDiff > -30,
+            isLate: minutesDiff < 0
+        });
+
+        // Trước giờ bắt đầu - CÓ THỂ CHECK-IN SỚM
+        if (minutesDiff > 0) {
             return { 
                 canCheckIn: true, 
-                status: 'ready', 
-                message: 'Có thể check-in',
+                status: 'early', 
+                message: 'Có thể check-in sớm',
                 isLate: false 
             };
         }
         
-        // Sau giờ bắt đầu
+        // Sau giờ bắt đầu đến 30 phút - CÓ THỂ CHECK-IN TRỄ
+        if (minutesDiff >= -30) {
+            return { 
+                canCheckIn: true, 
+                status: 'late', 
+                message: 'Check-in trễ',
+                isLate: true 
+            };
+        }
+        
+        // Sau giờ bắt đầu quá 30 phút - KHÔNG THỂ CHECK-IN
         return { 
-            canCheckIn: true, 
-            status: 'late', 
-            message: 'Check-in trễ',
+            canCheckIn: false, 
+            status: 'too-late', 
+            message: 'Đã quá giờ check-in',
             isLate: true 
         };
     };
@@ -224,13 +244,19 @@ const LessonDetail = () => {
                 is_late: checkInStatus.isLate // Thêm trạng thái trễ
             };
 
-            await LessonService.createLessonCheckIn(checkInData);
+            console.log('Submitting check-in data:', checkInData);
+            const result = await LessonService.createLessonCheckIn(checkInData);
+            console.log('Check-in result:', result);
 
             // Refresh trạng thái check-in
             await checkCheckInStatus(lesson.id);
+            
+            // Thông báo thành công
+            alert('Check-in thành công!');
 
         } catch (error) {
             console.error('Error during check-in:', error);
+            alert('Có lỗi khi check-in: ' + (error.message || 'Không xác định'));
         }
     };
 
@@ -550,6 +576,15 @@ const LessonDetail = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {(() => {
                             const checkInStatus = getCheckInStatus();
+                            
+                            // Debug: Log thông tin để kiểm tra
+                            console.log('Debug Check-in Status:', {
+                                checkInStatus,
+                                lessonSchedule: lesson.schedule,
+                                currentTime: new Date().toLocaleString('vi-VN'),
+                                lessonStartTime: lesson.schedule?.start_date + ' ' + lesson.schedule?.start_time
+                            });
+                            
                             let buttonClass = "flex flex-col items-center p-4 rounded-lg transition-colors ";
                             let icon = "📝";
                             let text = "Check in";
@@ -557,10 +592,20 @@ const LessonDetail = () => {
 
                             // Nếu đã check-in, hiển thị trạng thái đã check-in
                             if (checkInInfo) {
+                                console.log('Check-in Info:', checkInInfo);
+                                
                                 const checkInTime = new Date(checkInInfo.checkin_time);
-                                const lessonStartTime = new Date(lesson.schedule.start_date);
-                                const [hours, minutes] = lesson.schedule.start_time.split(':');
-                                lessonStartTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                                let lessonStartTime;
+                                
+                                // Parse thời gian lesson giống như trong getCheckInStatus
+                                if (lesson.start_datetime) {
+                                    lessonStartTime = new Date(lesson.start_datetime);
+                                } else {
+                                    const lessonDate = new Date(lesson.schedule.start_date);
+                                    const [hours, minutes] = lesson.schedule.start_time.split(':');
+                                    lessonDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                                    lessonStartTime = lessonDate;
+                                }
                                 
                                 // Kiểm tra xem có check in muộn không
                                 const isLateCheckIn = checkInTime > lessonStartTime;
