@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import StudentSelectionModal from '../components/StudentSelectionModal';
 import LessonEvaluationForm from '../components/LessonEvaluation/LessonEvaluationForm';
 import LessonGalleryModal from '../components/LessonGalleryModal';
-import LessonDocumentationModal from '../components/LessonDocumentation/LessonDocumentationModal';
+import LessonDocumentationService from '../services/LessonDocumentationService';
 
 const LessonDetail = () => {
     const { id } = useParams();
@@ -534,11 +534,7 @@ const LessonDetail = () => {
                             </button>
                             <h1 className="text-xl font-bold text-gray-900">Chi tiết buổi học</h1>
                         </div>
-                        <button className="p-2 rounded-lg hover:bg-gray-100">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                        </button>
+                        
                     </div>
                 </div>
             </div>
@@ -548,12 +544,10 @@ const LessonDetail = () => {
                 <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
                     <div className="mb-4">
                         <span className="text-sm font-medium text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full">
-                            Buổi {lesson.sequence_number}/{lesson.total_lessons}
+                            Buổi {lesson.sequence_number} - {classInfo?.name}
                         </span>
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                        {classInfo?.name || 'Chưa có học phần'}, Module {lesson.module || 'Chưa có học phần'}
-                    </h2>
+                    
                     <h3 className="text-lg text-gray-700 mb-4">{lesson.name}</h3>
 
                     <div className="grid grid-cols-1 gap-4">
@@ -741,6 +735,21 @@ const LessonDetail = () => {
                             <h4 className="font-semibold text-gray-900">Feedback buổi học</h4>
                         </div>
                         <p className="text-gray-600 text-sm">Nhận xét, đánh giá về buổi học</p>
+                    </div>
+                    
+                    <div className="bg-white rounded-xl shadow-sm p-6">
+                        <div className="flex items-center mb-4">
+                            <div className="text-2xl mr-3">📄</div>
+                            <h4 className="font-semibold text-gray-900">Tài liệu buổi học</h4>
+                        </div>
+                        <p className="text-gray-600 text-sm mb-4">Xem và quản lý tài liệu của buổi học</p>
+                        <button
+                            onClick={() => setShowDocumentationModal(true)}
+                            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                        >
+                            <span className="mr-2">📄</span>
+                            Xem tài liệu
+                        </button>
                     </div>
                 </div>
             </div>
@@ -997,13 +1006,144 @@ const LessonDetail = () => {
                 title="Quản lý ảnh buổi học"
             />
 
-            {/* Documentation Modal */}
-            <LessonDocumentationModal
-                isOpen={showDocumentationModal}
-                onClose={() => setShowDocumentationModal(false)}
-                lessonId={lesson?.id || id}
-                title="Quản lý tài liệu buổi học"
-            />
+            {/* Documentation Modal - Read Only */}
+            {showDocumentationModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                        {/* Header */}
+                        <div className="flex items-center justify-between p-6 border-b">
+                            <h3 className="text-lg font-semibold text-gray-900">Tài liệu buổi học</h3>
+                            <button
+                                onClick={() => setShowDocumentationModal(false)}
+                                className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-6 overflow-y-auto max-h-[70vh]">
+                            <DocumentationViewer lessonId={lesson?.id || id} />
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex justify-end p-6 border-t bg-gray-50">
+                            <button
+                                onClick={() => setShowDocumentationModal(false)}
+                                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                            >
+                                Đóng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Component chỉ để xem tài liệu (read-only)
+const DocumentationViewer = ({ lessonId }) => {
+    const [documents, setDocuments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (lessonId) {
+            fetchDocuments();
+        }
+    }, [lessonId]);
+
+    const fetchDocuments = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const data = await LessonDocumentationService.getLessonDocumentations(lessonId);
+            setDocuments(data);
+        } catch (error) {
+            console.error('Error fetching documents:', error);
+            setError('Không thể tải danh sách tài liệu');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Đang tải tài liệu...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-8">
+                <div className="text-red-500 text-4xl mb-4">❌</div>
+                <p className="text-red-600">{error}</p>
+            </div>
+        );
+    }
+
+    if (documents.length === 0) {
+        return (
+            <div className="text-center py-8">
+                <div className="text-gray-400 text-4xl mb-4">📄</div>
+                <p className="text-gray-600">Chưa có tài liệu nào cho buổi học này</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            {documents.map((doc, index) => (
+                <div key={doc.id || index} className="border border-gray-200 rounded-lg p-4">
+                    {/* Thông tin tài liệu */}
+                    <div className="mb-4">
+                        <h4 className="font-semibold text-gray-900 text-lg mb-2">
+                            {doc.name || `Tài liệu ${index + 1}`}
+                        </h4>
+                    </div>
+
+                    {/* Hiển thị tài liệu */}
+                    <div 
+                        style={{
+                            position: 'relative',
+                            width: '100%',
+                            height: 0,
+                            paddingTop: '56.25%', // 16:9 aspect ratio
+                            paddingBottom: 0,
+                            boxShadow: '0 2px 8px 0 rgba(63,69,81,0.16)',
+                            overflow: 'hidden',
+                            borderRadius: '8px',
+                            willChange: 'transform'
+                        }}
+                    >
+                        <iframe
+                            src={doc.link.includes('canva.com') 
+                                ? (doc.link.includes('/view?') ? `${doc.link}&embed` : `${doc.link}?embed`)
+                                : doc.link}
+                            style={{
+                                position: 'absolute',
+                                width: '100%',
+                                height: '100%',
+                                top: 0,
+                                left: 0,
+                                border: 'none',
+                                padding: 0,
+                                margin: 0
+                            }}
+                            loading="lazy"
+                            allowFullScreen={true}
+                            allow="fullscreen"
+                            title={doc.name || `Tài liệu ${index + 1}`}
+                        />
+                    </div>
+                </div>
+            ))}
         </div>
     );
 };

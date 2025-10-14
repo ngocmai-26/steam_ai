@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { mockStudents } from '../mockData/students';
 import { StudentService } from '../services/StudentService';
 
 // Async thunk for fetching students

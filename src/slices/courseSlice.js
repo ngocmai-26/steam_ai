@@ -1,5 +1,4 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { mockCourses } from '../data/mockData';
 import {
   fetchCoursesThunk,
   fetchCourseByIdThunk,

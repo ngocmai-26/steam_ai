@@ -10,6 +10,11 @@ class LessonDocumentationService {
             return response.data?.data || response.data || [];
         } catch (error) {
             console.error('Error fetching lesson documentations:', error);
+            console.error('Error details:', {
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data
+            });
             return [];
         }
     }

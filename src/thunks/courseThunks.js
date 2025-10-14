@@ -7,14 +7,6 @@ import {
   updateModule,
   removeModule,
 } from '../slices/courseSlice';
-import {
-  mockCourses,
-  mockClasses,
-  mockModules,
-  getClassesByCourseId,
-  getModulesByClassId
-} from '../mockData';
-import { mockApiService } from '../services/mockData';
 import { setAlert } from '../slices/alertSlice';
 
 // Helper function to create FormData
@@ -165,10 +157,13 @@ export const fetchClasses = createAsyncThunk(
   'course/fetchClasses',
   async (courseId, { rejectWithValue }) => {
     try {
-      const response = await mockApiService.getClasses();
-      return response;
+      const response = await axios.get(COURSE_ENDPOINTS.CLASSES, {
+        params: { course: courseId }
+      });
+      return response.data?.data || response.data || [];
     } catch (error) {
-      return rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message || 'Không thể tải danh sách lớp học';
+      return rejectWithValue(message);
     }
   }
 );
@@ -177,10 +172,14 @@ export const createClass = createAsyncThunk(
   'course/createClass',
   async ({ courseId, classData }, { rejectWithValue }) => {
     try {
-      const response = await mockApiService.createClass(courseId, classData);
-      return response;
+      const response = await axios.post(COURSE_ENDPOINTS.CLASSES, {
+        ...classData,
+        course: courseId
+      });
+      return response.data?.data || response.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message || 'Không thể tạo lớp học';
+      return rejectWithValue(message);
     }
   }
 );
@@ -189,10 +188,11 @@ export const updateClassThunk = createAsyncThunk(
   'course/updateClass',
   async ({ id, classData }, { rejectWithValue }) => {
     try {
-      const response = await mockApiService.updateClass(id, classData);
-      return response;
+      const response = await axios.put(`${COURSE_ENDPOINTS.CLASSES}/${id}`, classData);
+      return response.data?.data || response.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message || 'Không thể cập nhật lớp học';
+      return rejectWithValue(message);
     }
   }
 );
@@ -201,10 +201,11 @@ export const deleteClass = createAsyncThunk(
   'course/deleteClass',
   async (id, { rejectWithValue }) => {
     try {
-      await mockApiService.deleteClass(id);
+      await axios.delete(`${COURSE_ENDPOINTS.CLASSES}/${id}`);
       return id;
     } catch (error) {
-      return rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message || 'Không thể xóa lớp học';
+      return rejectWithValue(message);
     }
   }
 );
@@ -214,10 +215,13 @@ export const fetchModules = createAsyncThunk(
   'course/fetchModules',
   async (classId, { rejectWithValue }) => {
     try {
-      const response = await mockApiService.getModulesByClassId(classId);
-      return response;
+      const response = await axios.get(COURSE_ENDPOINTS.MODULES, {
+        params: { class: classId }
+      });
+      return response.data?.data || response.data || [];
     } catch (error) {
-      return rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message || 'Không thể tải danh sách module';
+      return rejectWithValue(message);
     }
   }
 );
@@ -226,10 +230,14 @@ export const createModule = createAsyncThunk(
   'course/createModule',
   async ({ classId, moduleData }, { rejectWithValue }) => {
     try {
-      const response = await mockApiService.createModule(classId, moduleData);
-      return response;
+      const response = await axios.post(COURSE_ENDPOINTS.MODULES, {
+        ...moduleData,
+        class: classId
+      });
+      return response.data?.data || response.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message || 'Không thể tạo module';
+      return rejectWithValue(message);
     }
   }
 );
@@ -238,10 +246,11 @@ export const updateModuleThunk = createAsyncThunk(
   'course/updateModule',
   async ({ id, moduleData }, { rejectWithValue }) => {
     try {
-      const response = await mockApiService.updateModule(id, moduleData);
-      return response;
+      const response = await axios.put(`${COURSE_ENDPOINTS.MODULES}/${id}`, moduleData);
+      return response.data?.data || response.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message || 'Không thể cập nhật module';
+      return rejectWithValue(message);
     }
   }
 );
@@ -250,10 +259,11 @@ export const deleteModule = createAsyncThunk(
   'course/deleteModule',
   async (id, { rejectWithValue }) => {
     try {
-      await mockApiService.deleteModule(id);
+      await axios.delete(`${COURSE_ENDPOINTS.MODULES}/${id}`);
       return id;
     } catch (error) {
-      return rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message || 'Không thể xóa module';
+      return rejectWithValue(message);
     }
   }
 );
@@ -263,10 +273,13 @@ export const fetchClassesByCourseId = createAsyncThunk(
   'course/fetchClassesByCourseId',
   async (courseId, { rejectWithValue }) => {
     try {
-      const response = await mockApiService.getClassesByCourseId(courseId);
-      return response;
+      const response = await axios.get(COURSE_ENDPOINTS.CLASSES, {
+        params: { course: courseId }
+      });
+      return response.data?.data || response.data || [];
     } catch (error) {
-      return rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message || 'Không thể tải danh sách lớp học';
+      return rejectWithValue(message);
     }
   }
 ); 
