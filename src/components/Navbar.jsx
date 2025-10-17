@@ -8,6 +8,7 @@ import { HiUser, HiLogout } from 'react-icons/hi';
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -23,67 +24,99 @@ const Navbar = () => {
       if (isUserMenuOpen && !event.target.closest('.user-menu')) {
         setIsUserMenuOpen(false);
       }
+      if (openDropdown && !event.target.closest('.dropdown-menu')) {
+        setOpenDropdown(null);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isUserMenuOpen]);
+  }, [isUserMenuOpen, openDropdown]);
 
-  const menuItems = [
+  // Nhóm menu items theo chức năng
+  const menuGroups = [
     {
-      to: '/student-registrations',
-      label: 'Duyệt đăng ký',
-      icon: '✅',
-      managerOnly: true
+      label: 'Quản lý học tập',
+      icon: '📚',
+      items: [
+        {
+          to: '/courses',
+          label: 'Quản lý khóa học',
+          icon: '📚',
+          managerOnly: true
+        },
+        {
+          to: '/classes',
+          label: 'Quản lý lớp học',
+          icon: '🏫'
+        },
+        {
+          to: '/modules',
+          label: 'Quản lý học phần',
+          icon: '🧩',
+          hideForTeacher: true
+        },
+        {
+          to: '/lessons',
+          label: 'Quản lý buổi học',
+          icon: '📅',
+          hideForTeacher: true
+        }
+      ]
     },
     {
-      to: '/students',
       label: 'Quản lý học viên',
       icon: '👥',
-      hideForTeacher: true
+      items: [
+        {
+          to: '/student-registrations',
+          label: 'Duyệt đăng ký',
+          icon: '✅',
+          managerOnly: true
+        },
+        {
+          to: '/students',
+          label: 'Quản lý học viên',
+          icon: '👥',
+          hideForTeacher: true
+        }
+      ]
     },
     {
-      to: '/courses',
-      label: 'Quản lý khóa học',
-      icon: '📚',
-      managerOnly: true
-    },
-    {
-      to: '/classes',
-      label: 'Quản lý lớp học',
-      icon: '🏫'
-    },
-    {
-      to: '/modules',
-      label: 'Quản lý học phần',
-      icon: '🧩',
-      hideForTeacher: true
-    },
-    {
-      to: '/lessons',
-      label: 'Quản lý buổi học',
-      icon: '📅',
-      hideForTeacher: true
-    },
+      label: 'Hệ thống',
+      icon: '⚙️',
+      items: [
+        {
+          to: '/accounts',
+          label: 'Quản lý tài khoản',
+          icon: '🛡️',
+          adminOnly: true
+        },
+        {
+          to: '/news',
+          label: 'Quản lý tin tức',
+          icon: '📰',
+          hideForTeacher: true
+        },
+        {
+          to: '/facilities',
+          label: 'Quản lý cơ sở vật chất',
+          icon: '🏢',
+          managerOnly: true
+        }
+      ]
+    }
+  ];
 
+  // Menu items đơn lẻ (không nhóm)
+  const singleMenuItems = [
     {
       to: '/calendar',
       label: 'Lịch học',
       icon: '📆',
       hideForManager: true
-    },
-    {
-      to: '/accounts',
-      label: 'Quản lý tài khoản',
-      icon: '🛡️',
-      adminOnly: true
-    },
-    {
-      to: '/news',
-      label: 'Quản lý tin tức',
-      icon: '📰'
     }
   ];
 
@@ -92,27 +125,38 @@ const Navbar = () => {
   const isManager = user && user.role?.toLowerCase() === 'manager';
   const isTeacher = user && user.role?.toLowerCase() === 'teacher';
 
-  let filteredMenuItems = menuItems;
-  if (isAdmin) {
-    filteredMenuItems = menuItems.filter(item => item.adminOnly);
-  } else {
-    filteredMenuItems = menuItems.filter(item => !item.adminOnly);
-  }
+  // Hàm lọc menu items
+  const filterMenuItems = (items) => {
+    let filtered = items;
+    
+    if (isAdmin) {
+      filtered = filtered.filter(item => item.adminOnly);
+    } else {
+      filtered = filtered.filter(item => !item.adminOnly);
+    }
 
-  // Ẩn các menu cụ thể cho manager
-  if (isManager) {
-    filteredMenuItems = filteredMenuItems.filter(item => !item.hideForManager);
-  }
+    if (isManager) {
+      filtered = filtered.filter(item => !item.hideForManager);
+    }
 
-  // Ẩn menu chỉ dành cho manager cho các role khác
-  if (!isManager) {
-    filteredMenuItems = filteredMenuItems.filter(item => !item.managerOnly);
-  }
+    if (!isManager) {
+      filtered = filtered.filter(item => !item.managerOnly);
+    }
 
-  // Ẩn các menu cụ thể cho teacher
-  if (isTeacher) {
-    filteredMenuItems = filteredMenuItems.filter(item => !item.hideForTeacher);
-  }
+    if (isTeacher) {
+      filtered = filtered.filter(item => !item.hideForTeacher);
+    }
+
+    return filtered;
+  };
+
+  // Lọc menu groups và single menu items
+  const filteredMenuGroups = menuGroups.map(group => ({
+    ...group,
+    items: filterMenuItems(group.items)
+  })).filter(group => group.items.length > 0);
+
+  const filteredSingleMenuItems = filterMenuItems(singleMenuItems);
 
   const handleLogout = () => {
     dispatch(logoutThunk());
@@ -131,7 +175,47 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden lg:flex lg:items-center lg:space-x-2 xl:space-x-4">
-            {filteredMenuItems.map((item) => (
+            {/* Menu Groups với Dropdown */}
+            {filteredMenuGroups.map((group) => (
+              <div key={group.label} className="relative dropdown-menu">
+                <button
+                  onClick={() => setOpenDropdown(openDropdown === group.label ? null : group.label)}
+                  className={`px-2 xl:px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap flex items-center ${openDropdown === group.label
+                    ? 'bg-indigo-100 text-indigo-700'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                >
+                  <span className="mr-1 xl:mr-2">{group.icon}</span>
+                  {group.label}
+                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu */}
+                {openDropdown === group.label && (
+                  <div className="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg py-1 z-50 border">
+                    {group.items.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setOpenDropdown(null)}
+                        className={`flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 ${location.pathname === item.to
+                          ? 'bg-indigo-50 text-indigo-700'
+                          : ''
+                          }`}
+                      >
+                        <span className="mr-3">{item.icon}</span>
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Single Menu Items */}
+            {filteredSingleMenuItems.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -148,7 +232,47 @@ const Navbar = () => {
 
           {/* Tablet Menu */}
           <div className="hidden md:flex lg:hidden md:items-center md:space-x-1">
-            {filteredMenuItems.slice(0, 4).map((item) => (
+            {/* Hiển thị menu groups và single items */}
+            {filteredMenuGroups.slice(0, 2).map((group) => (
+              <div key={group.label} className="relative dropdown-menu">
+                <button
+                  onClick={() => setOpenDropdown(openDropdown === group.label ? null : group.label)}
+                  className={`px-2 py-2 rounded-md text-sm font-medium whitespace-nowrap flex items-center ${openDropdown === group.label
+                    ? 'bg-indigo-100 text-indigo-700'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                >
+                  <span className="mr-1">{group.icon}</span>
+                  {group.label}
+                  <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu */}
+                {openDropdown === group.label && (
+                  <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50 border">
+                    {group.items.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setOpenDropdown(null)}
+                        className={`flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 ${location.pathname === item.to
+                          ? 'bg-indigo-50 text-indigo-700'
+                          : ''
+                          }`}
+                      >
+                        <span className="mr-2">{item.icon}</span>
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            {/* Single menu items */}
+            {filteredSingleMenuItems.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -161,13 +285,6 @@ const Navbar = () => {
                 {item.label}
               </Link>
             ))}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-md"
-            >
-              <span className="mr-1">📋</span>
-              Thêm
-            </button>
           </div>
 
           {/* User Menu */}
@@ -256,7 +373,31 @@ const Navbar = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {filteredMenuItems.map((item) => (
+            {/* Menu Groups */}
+            {filteredMenuGroups.map((group) => (
+              <div key={group.label}>
+                <div className="px-3 py-2 text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                  {group.icon} {group.label}
+                </div>
+                {group.items.map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={`block px-6 py-2 rounded-md text-base font-medium ${location.pathname === item.to
+                      ? 'bg-indigo-100 text-indigo-700'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      }`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <span className="mr-2">{item.icon}</span>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+
+            {/* Single Menu Items */}
+            {filteredSingleMenuItems.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -270,6 +411,8 @@ const Navbar = () => {
                 {item.label}
               </Link>
             ))}
+            
+            {/* User Section */}
             <div className="pt-4 pb-3 border-t border-gray-200">
               <div className="px-2">
                 <div className="px-3 py-2 text-base font-medium text-gray-700">

@@ -10,7 +10,6 @@ import Home from '../pages/Home';
 import CreateUser from '../pages/CreateUser';
 
 // Private pages
-import Dashboard from '../pages/Dashboard';
 import Students from '../pages/Students';
 import Courses from '../pages/Courses';
 import Classes from '../pages/Classes';
@@ -23,6 +22,7 @@ import LessonDetail from '../pages/LessonDetail';
 import Profile from '../pages/Profile';
 import CalendarPage from '../pages/Calendar';
 import StudentRegistrations from '../pages/StudentRegistrations';
+import Facilities from '../pages/Facilities';
 
 // Layouts
 import MainLayout from '../layouts/MainLayout';
@@ -43,9 +43,6 @@ const AppRoutes = () => {
         {/* Entry point after login, redirects based on role */}
         <Route path="/" element={<Home />} />
 
-        {/* Dashboard route */}
-        <Route path="/dashboard" element={<RoleBasedRoute allowedRoles={['manager']}><Dashboard /></RoleBasedRoute>} />
-
         {/* Manager-only routes */}
         <Route path="/students" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><Students /></RoleBasedRoute>} />
         <Route path="/courses" element={<RoleBasedRoute allowedRoles={['manager']}><Courses /></RoleBasedRoute>} />
@@ -60,6 +57,7 @@ const AppRoutes = () => {
         <Route path="/news" element={<RoleBasedRoute allowedRoles={['manager']}><News /></RoleBasedRoute>} />
         <Route path="/calendar" element={<RoleBasedRoute allowedRoles={['manager', 'teacher']}><CalendarPage /></RoleBasedRoute>} />
         <Route path="/student-registrations" element={<RoleBasedRoute allowedRoles={['manager']}><StudentRegistrations /></RoleBasedRoute>} />
+        <Route path="/facilities" element={<RoleBasedRoute allowedRoles={['manager']}><Facilities /></RoleBasedRoute>} />
 
         {/* Root-only routes */}
 

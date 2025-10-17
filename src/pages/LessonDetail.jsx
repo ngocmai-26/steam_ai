@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 import { LessonService } from '../services/LessonService';
 import AttendanceService from '../services/AttendanceService';
 import ClassService from '../services/ClassService';
+import LessonEvaluationService from '../services/LessonEvaluationService';
 import { format } from 'date-fns';
 import StudentSelectionModal from '../components/StudentSelectionModal';
 import LessonEvaluationForm from '../components/LessonEvaluation/LessonEvaluationForm';
@@ -114,34 +116,47 @@ const LessonDetail = () => {
 
     // Lấy danh sách điểm danh cho buổi học
     const fetchAttendances = async (lessonId) => {
-        if (!lessonId || !lesson?.class_room) return;
+        if (!lessonId || !classInfo?.class_room) return;
 
         try {
-            // Lấy danh sách học sinh từ lớp học
-            const classStudentsData = await ClassService.getStudentsByClassroom(lesson.class_room);
+            // Lấy danh sách học viên từ lớp học
+            const classStudentsData = await ClassService.getStudentsByClassroom(classInfo.class_room);
             
             // Lấy danh sách điểm danh cho buổi học
             const attendanceData = await AttendanceService.getAttendances({
                 lesson: lessonId,
-                classroom: lesson.class_room
+                classroom: classInfo.class_room
             });
+
+            // Lấy danh sách đánh giá cho buổi học
+            console.log('🔍 About to call LessonEvaluationService.getLessonEvaluations with lessonId:', lessonId);
+            const evaluationData = await LessonEvaluationService.getLessonEvaluations(lessonId);
+            console.log('✅ Evaluation data received:', evaluationData);
 
             // Xử lý và kết hợp dữ liệu
             const processedAttendances = classStudentsData.map(student => {
-                // Tìm thông tin điểm danh của học sinh
-                const attendance = attendanceData.find(att => 
+                // Tìm thông tin điểm danh của học viên
+                const attendance = attendanceData.find(att =>
                     (att.student && typeof att.student === 'object' && att.student.id === student.id) ||
                     (att.student === student.id)
                 );
 
-                // Nếu có điểm danh, trả về thông tin điểm danh
+                // Tìm thông tin đánh giá của học viên
+                const evaluation = evaluationData.find(evaluationItem =>
+                    (evaluationItem.student && typeof evaluationItem.student === 'object' && evaluationItem.student.id === student.id) ||
+                    (evaluationItem.student === student.id)
+                );
+
+                // Nếu có điểm danh, trả về thông tin điểm danh + đánh giá
                 if (attendance) {
                     return {
                         ...attendance,
                         student: {
                             ...student,
                             ...attendance.student
-                        }
+                        },
+                        is_evaluated: evaluation ? true : false,
+                        evaluation: evaluation || null
                     };
                 }
 
@@ -152,10 +167,12 @@ const LessonDetail = () => {
                     status: 'pending',
                     note: '',
                     check_in_time: null,
-                    is_evaluated: false
+                    is_evaluated: evaluation ? true : false,
+                    evaluation: evaluation || null
                 };
             });
 
+            console.log('Updated attendances with evaluations:', processedAttendances);
             setAttendances(processedAttendances);
             setClassStudents(classStudentsData);
         } catch (error) {
@@ -252,11 +269,14 @@ const LessonDetail = () => {
             await checkCheckInStatus(lesson.id);
             
             // Thông báo thành công
-            alert('Check-in thành công!');
+            toast.success('Check-in thành công!');
 
         } catch (error) {
             console.error('Error during check-in:', error);
-            alert('Có lỗi khi check-in: ' + (error.message || 'Không xác định'));
+            
+            // Hiển thị thông báo lỗi từ API hoặc thông báo mặc định
+            const errorMessage = error.response?.data?.message || error.message || 'Không xác định';
+            toast.error(errorMessage);
         }
     };
 
@@ -279,7 +299,7 @@ const LessonDetail = () => {
 
             console.log("Data loaded:", { classData, attendanceData });
 
-            // Xử lý dữ liệu học sinh và điểm danh
+            // Xử lý dữ liệu học viên và điểm danh
             const students = classData.data.students || [];
             const processedAttendances = students.map(student => {
                 const attendance = attendanceData.find(att => 
@@ -315,7 +335,7 @@ const LessonDetail = () => {
             console.error('Error fetching data:', error);
             setClassStudents([]);
             setAttendances([]);
-            alert('Có lỗi khi tải dữ liệu lớp học và điểm danh');
+            toast.error('Có lỗi khi tải dữ liệu lớp học và điểm danh');
         } finally {
             setLoadingStudents(false);
         }
@@ -346,15 +366,22 @@ const LessonDetail = () => {
             // Gọi API thực tế
             await AttendanceService.createAttendance(attendanceData);
 
-            // Refresh danh sách điểm danh
+            // Refresh danh sách điểm danh và đợi hoàn thành
             await fetchAttendances(lesson.id);
+            
+            // Thông báo thành công
+            toast.success('Điểm danh thành công!');
+            
+            // Đóng modal sau khi cập nhật thành công
+            setShowStudentAttendanceModal(false);
+            setSelectedStudent(null);
 
         } catch (error) {
             console.error('Error saving attendance:', error);
-        } finally {
-            // Đóng modal
-            setShowStudentAttendanceModal(false);
-            setSelectedStudent(null);
+            
+            // Hiển thị thông báo lỗi từ API hoặc thông báo mặc định
+            const errorMessage = error.response?.data?.message || error.message || 'Có lỗi khi lưu điểm danh';
+            toast.error(errorMessage);
         }
     };
 
@@ -397,17 +424,18 @@ const LessonDetail = () => {
             setLoadingStudents(true);
             
             // Gọi các API song song để tăng tốc
-            const [classData, attendanceData] = await Promise.all([
+            const [classData, attendanceData, evaluationData] = await Promise.all([
                 ClassService.getClassById(classInfo.class_room),
                 AttendanceService.getAttendances({
                     lesson: lesson.id,
                     classroom: classInfo.class_room
-                })
+                }),
+                LessonEvaluationService.getLessonEvaluations(lesson.id)
             ]);
 
-            console.log("Data loaded for evaluation:", { classData, attendanceData });
+            console.log("Data loaded for evaluation:", { classData, attendanceData, evaluationData });
 
-            // Xử lý dữ liệu học sinh và điểm danh
+            // Xử lý dữ liệu học viên, điểm danh và đánh giá
             const students = classData.data.students || [];
             const processedStudents = students.map(student => {
                 const attendance = attendanceData.find(att => 
@@ -415,9 +443,18 @@ const LessonDetail = () => {
                     (att.student === student.id)
                 );
 
+                const evaluation = evaluationData.find(evaluationItem =>
+                    (evaluationItem.student && typeof evaluationItem.student === 'object' && evaluationItem.student.id === student.id) ||
+                    (evaluationItem.student === student.id)
+                );
+
                 return {
                     ...student,
-                    attendance: attendance || null,
+                    attendance: attendance ? {
+                        ...attendance,
+                        is_evaluated: evaluation ? true : false,
+                        evaluation: evaluation || null
+                    } : null,
                     classInfo: classInfo
                 };
             });
@@ -427,7 +464,7 @@ const LessonDetail = () => {
             
         } catch (error) {
             console.error('Error fetching data for evaluation:', error);
-            alert('Có lỗi khi tải dữ liệu học sinh');
+            toast.error('Có lỗi khi tải dữ liệu học viên');
             setShowStudentSelectionModal(false);
         } finally {
             setLoadingStudents(false);
@@ -439,12 +476,23 @@ const LessonDetail = () => {
         setShowEvaluationForm(true);
     };
 
-    const handleEvaluationSubmit = (formData) => {
-        // Chỉ ẩn form đánh giá, giữ lại modal chọn học viên
-        setShowEvaluationForm(false);
-        setSelectedStudentForEvaluation(null);
-        // Hiện lại modal chọn học viên
-        setShowStudentSelectionModal(true);
+    const handleEvaluationSubmit = async (formData) => {
+        try {
+            // Refresh danh sách điểm danh để cập nhật trạng thái đánh giá
+            await fetchAttendances(lesson.id);
+            
+            // Thông báo thành công
+            toast.success('Đánh giá thành công!');
+            
+            // Chỉ ẩn form đánh giá, giữ lại modal chọn học viên
+            setShowEvaluationForm(false);
+            setSelectedStudentForEvaluation(null);
+            // Hiện lại modal chọn học viên
+            setShowStudentSelectionModal(true);
+        } catch (error) {
+            console.error('Error refreshing attendance data after evaluation:', error);
+            toast.error('Có lỗi khi cập nhật dữ liệu');
+        }
     };
 
     const handleEvaluationBack = () => {
@@ -655,7 +703,7 @@ const LessonDetail = () => {
                             );
                         })()}
 
-                        {/* Điểm danh học sinh - chỉ enable khi đã check-in */}
+                        {/* Điểm danh học viên - chỉ enable khi đã check-in */}
                         <button
                             onClick={checkInInfo ? handleAttendance : undefined}
                             disabled={!checkInInfo}
@@ -666,7 +714,7 @@ const LessonDetail = () => {
                         >
                             <div className="text-2xl mb-2">👥</div>
                             <span className={`font-medium ${checkInInfo ? 'text-blue-800' : 'text-gray-600'}`}>
-                                Điểm danh học sinh
+                                Điểm danh học viên
                             </span>
                         </button>
 
@@ -760,7 +808,7 @@ const LessonDetail = () => {
                     <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
                         <div className="flex items-center justify-between p-6 border-b">
                             <h3 className="text-lg font-semibold text-gray-900">
-                                Điểm danh học sinh - {classInfo?.name || 'Chưa có học phần'}
+                                Điểm danh học viên - {classInfo?.name || 'Chưa có học phần'}
                             </h3>
                             <button
                                 onClick={() => setShowAttendanceModal(false)}
@@ -776,7 +824,7 @@ const LessonDetail = () => {
                             {loadingStudents ? (
                                 <div className="text-center py-8">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                                    <p className="text-gray-600">Đang tải danh sách học sinh...</p>
+                                    <p className="text-gray-600">Đang tải danh sách học viên...</p>
                                 </div>
                             ) : classStudents.length > 0 ? (
                                 <div className="space-y-3">
@@ -796,7 +844,7 @@ const LessonDetail = () => {
                                                     <p className="font-medium text-gray-900">
                                                         {student.first_name && student.last_name
                                                             ? `${student.first_name} ${student.last_name}`
-                                                            : student.identification_number || `Học sinh ${index + 1}`
+                                                            : student.identification_number || `học viên ${index + 1}`
                                                         }
                                                     </p>
                                                     <p className="text-sm text-gray-500">
@@ -807,11 +855,14 @@ const LessonDetail = () => {
                                             <div className="flex items-center">
                                                 {(() => {
                                                     console.log("attendances", attendances)
+                                                    console.log("current student:", student)
                                                     // Sửa logic mapping: API trả về student là object, không phải number
                                                     const studentAttendance = attendances.find(att =>
                                                         (att.student && typeof att.student === 'object' && att.student.id === student.id) ||
                                                         (att.student === student.id)
                                                     );
+                                                    
+                                                    console.log("studentAttendance for student", student.id, ":", studentAttendance);
 
                                                     if (studentAttendance) {
                                                         const statusMap = {
@@ -844,19 +895,12 @@ const LessonDetail = () => {
                             ) : (
                                 <div className="text-center py-8">
                                     <div className="text-4xl mb-4">👥</div>
-                                    <p className="text-gray-600">Không có học sinh nào trong lớp</p>
+                                    <p className="text-gray-600">Không có học viên nào trong lớp</p>
                                 </div>
                             )}
                         </div>
 
-                        <div className="flex justify-end p-6 border-t bg-gray-50">
-                            <button
-                                onClick={() => setShowAttendanceModal(false)}
-                                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-100"
-                            >
-                                Đóng
-                            </button>
-                        </div>
+                       
                     </div>
                 </div>
             )}

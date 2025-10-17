@@ -105,7 +105,7 @@ const CourseDetail = () => {
                     )}
                   </div>
                   <div>
-                    <p><span className="font-medium">Học sinh:</span> {classItem.students?.length || 0}/{classItem.max_students}</p>
+                    <p><span className="font-medium">học viên:</span> {classItem.students?.length || 0}/{classItem.max_students}</p>
                     <p><span className="font-medium">Bài học:</span> {classItem.lessons?.length || 0}</p>
                   </div>
                 </div>

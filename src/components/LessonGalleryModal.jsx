@@ -245,15 +245,7 @@ const LessonGalleryModal = ({
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div className="flex justify-end p-4 sm:p-6 border-t">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 text-gray-600 hover:text-gray-800 focus:outline-none"
-                    >
-                        Đóng
-                    </button>
-                </div>
+               
             </div>
         </div>
     );

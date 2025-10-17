@@ -160,13 +160,13 @@ const ClassDetail = () => {
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold text-gray-900">
-            Danh sách học sinh ({students.length}/{currentClass.max_students || '∞'})
+            Danh sách học viên ({students.length}/{currentClass.max_students || '∞'})
           </h3>
           <button
             onClick={handleAddStudent}
             className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
-            Thêm học sinh
+            Thêm học viên
           </button>
         </div>
 
@@ -176,7 +176,7 @@ const ClassDetail = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Học sinh
+                    học viên
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email
@@ -238,7 +238,7 @@ const ClassDetail = () => {
             </table>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              Chưa có học sinh nào đăng ký lớp học này
+              Chưa có học viên nào đăng ký lớp học này
             </div>
           )}
         </div>

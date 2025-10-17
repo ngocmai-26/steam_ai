@@ -1,6 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../slices/authSlice';
-import dashboardReducer from '../slices/dashboardSlice';
 import userReducer from '../slices/userSlice';
 import alertReducer from '../slices/alertSlice';
 import classReducer from '../slices/classSlice';
@@ -10,11 +9,11 @@ import modalReducer from '../slices/modalSlice';
 import moduleReducer from '../slices/moduleSlice';
 import studentRegistrationReducer from '../slices/studentRegistrationSlice';
 import newsReducer from '../slices/newsSlice';
+import facilityReducer from '../slices/facilitySlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    dashboard: dashboardReducer,
     users: userReducer,
     alert: alertReducer,
     class: classReducer,
@@ -24,6 +23,7 @@ export const store = configureStore({
     module: moduleReducer,
     studentRegistration: studentRegistrationReducer,
     news: newsReducer,
+    facilities: facilityReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

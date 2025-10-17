@@ -11,12 +11,8 @@ const Home = () => {
     return <Loading />;
   }
 
-  if (user.role === 'root') {
-    return <Navigate to="/accounts" replace />;
-  }
-
-  // Default redirection for other roles like 'manager'
-  return <Navigate to="/" replace />;
+  // Redirect all users to profile page
+  return <Navigate to="/profile" replace />;
 };
 
 export default Home; 

@@ -151,7 +151,7 @@ const Students = () => {
     );
   }
 
-  // Lọc danh sách học sinh theo role
+  // Lọc danh sách học viên theo role
   const filteredStudents = role === 'teacher'
     ? students.filter(student => {
       // student.class_room có thể là object hoặc id
