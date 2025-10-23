@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LessonService } from '../../services/LessonService';
 import { useSelector } from 'react-redux';
 import { ButtonAction } from '../Table';
+import { getThumbnailUrl } from '../../utils/imageUtils';
 
 const LessonEvaluationList = () => {
   const navigate = useNavigate();
@@ -73,7 +74,28 @@ const LessonEvaluationList = () => {
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 mt-8">
         <h2 className="text-xl font-bold mb-4">Chi tiết đánh giá</h2>
         <div className="mb-4 flex items-center space-x-4">
-          <img src={detail.student?.avatar_url} alt="avatar" className="w-12 h-12 rounded-full object-cover border" />
+          <img 
+            src={getThumbnailUrl({ image_url: detail.student?.avatar_url }) || detail.student?.avatar_url} 
+            alt="avatar" 
+            className="w-12 h-12 rounded-full object-cover border"
+            onError={(e) => {
+              // Try alternative Google Drive URL format if current one failed
+              if (e.target.src.includes('drive.google.com/thumbnail')) {
+                const fileIdMatch = e.target.src.match(/id=([a-zA-Z0-9-_]+)/);
+                if (fileIdMatch && fileIdMatch[1]) {
+                  const fileId = fileIdMatch[1];
+                  const alternativeUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                  e.target.src = alternativeUrl;
+                  return;
+                }
+              }
+              
+              // If all else fails, use placeholder
+              if (e.target.src !== 'https://via.placeholder.com/48x48?text=U') {
+                e.target.src = 'https://via.placeholder.com/48x48?text=U';
+              }
+            }}
+          />
           <div>
             <div className="font-semibold">{detail.student?.first_name} {detail.student?.last_name}</div>
             <div className="text-sm text-gray-500">Mã SV: {detail.student?.identification_number}</div>
@@ -137,7 +159,28 @@ const LessonEvaluationList = () => {
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{evaluation.student?.identification_number}</td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{evaluation.student?.first_name} {evaluation.student?.last_name}</td>
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <img src={evaluation.student?.avatar_url} alt="avatar" className="w-8 h-8 rounded-full object-cover border" />
+                      <img 
+                        src={getThumbnailUrl({ image_url: evaluation.student?.avatar_url }) || evaluation.student?.avatar_url} 
+                        alt="avatar" 
+                        className="w-8 h-8 rounded-full object-cover border"
+                        onError={(e) => {
+                          // Try alternative Google Drive URL format if current one failed
+                          if (e.target.src.includes('drive.google.com/thumbnail')) {
+                            const fileIdMatch = e.target.src.match(/id=([a-zA-Z0-9-_]+)/);
+                            if (fileIdMatch && fileIdMatch[1]) {
+                              const fileId = fileIdMatch[1];
+                              const alternativeUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                              e.target.src = alternativeUrl;
+                              return;
+                            }
+                          }
+                          
+                          // If all else fails, use placeholder
+                          if (e.target.src !== 'https://via.placeholder.com/32x32?text=U') {
+                            e.target.src = 'https://via.placeholder.com/32x32?text=U';
+                          }
+                        }}
+                      />
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{evaluation.evaluation_date || evaluation.date || ''}</td>
                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{evaluation.focus_score ? `${evaluation.focus_score}/5` : ''}</td>

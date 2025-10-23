@@ -5,6 +5,8 @@ import { openModal } from '../slices/modalSlice';
 import { setCurrentStudent, fetchStudents, addStudentAsync, updateStudentAsync, deleteStudentAsync, fetchStudentDetail } from '../slices/studentSlice';
 import ModalManager from '../components/ModalManager';
 import { ButtonAction } from '../components/Table';
+import { getThumbnailUrl } from '../utils/imageUtils';
+import StudentAvatar from '../components/StudentAvatar';
 
 const Students = () => {
   const dispatch = useDispatch();
@@ -52,10 +54,11 @@ const Students = () => {
       render: (item) => (
         <div className="flex items-center">
           {item.avatar_url && (
-            <img
+            <StudentAvatar
               src={item.avatar_url}
               alt={`${item.first_name} ${item.last_name}`}
               className="h-10 w-10 rounded-full mr-3"
+              fallbackSrc="https://via.placeholder.com/40x40?text=U"
             />
           )}
           <span>{item.identification_number}</span>
@@ -184,10 +187,11 @@ const Students = () => {
           >
             <div className="flex items-center space-x-3 mb-3">
               {student.avatar_url && (
-                <img
+                <StudentAvatar
                   src={student.avatar_url}
                   alt={`${student.first_name} ${student.last_name}`}
                   className="h-12 w-12 rounded-full flex-shrink-0"
+                  fallbackSrc="https://via.placeholder.com/48x48?text=U"
                 />
               )}
               <div className="min-w-0 flex-1">

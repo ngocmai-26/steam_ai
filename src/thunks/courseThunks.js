@@ -82,11 +82,13 @@ export const createCourseThunk = createAsyncThunk(
   async (courseData, { dispatch, rejectWithValue }) => {
     try {
       const formData = createCourseFormData(courseData);
+      
       const response = await axios.post(COURSE_ENDPOINTS.COURSES, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+      
       dispatch(setAlert({ message: 'Tạo khóa học thành công!', type: 'success' }));
       return response.data.data;
     } catch (error) {
@@ -102,33 +104,18 @@ export const updateCourseThunk = createAsyncThunk(
   'course/updateCourse',
   async ({ id, courseData }, { dispatch, rejectWithValue }) => {
     try {
-      
-    
-      
       const formData = createCourseFormData(courseData);
       
-     
-      
-      // Kiểm tra xem có file upload không
-      const hasFileUpload = courseData.thumbnail instanceof File;
-      
-      let response;
-      
-      // Luôn sử dụng endpoint chính với FormData
-      response = await axios.put(COURSE_ENDPOINTS.COURSE_DETAIL(id), formData, {
+      const response = await axios.put(COURSE_ENDPOINTS.COURSE_DETAIL(id), formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
       
-       
-      dispatch(setAlert({ message: 'Cập nhật khóa học thành công!', type: 'success' }));
-      return response.data.data;
-     
       dispatch(setAlert({ message: 'Cập nhật khóa học thành công!', type: 'success' }));
       return response.data.data;
     } catch (error) {
-     const message = getErrorMessage(error);
+      const message = getErrorMessage(error);
       dispatch(setAlert({ message, type: 'error' }));
       return rejectWithValue(message);
     }

@@ -123,13 +123,14 @@ const Login = () => {
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center justify-center z-20 hover:bg-gray-50 rounded-r-md w-8"
                   onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
                 >
                   {showPassword ? (
-                    <HiEyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <HiEyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-pointer" />
                   ) : (
-                    <HiEye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <HiEye className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-pointer" />
                   )}
                 </button>
               </div>

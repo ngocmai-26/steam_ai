@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { closeModal } from '../slices/modalSlice';
 import { createCourseThunk, updateCourseThunk } from '../thunks/courseThunks';
+import { getThumbnailUrl, getImageDisplayName } from '../utils/imageUtils';
+import ImageWithFallback from './ImageWithFallback';
 
 const CourseModal = () => {
   const dispatch = useDispatch();
@@ -78,14 +80,8 @@ const CourseModal = () => {
     // Xử lý thumbnail
 
     if (selectedFile) {
-      // Có file mới được chọn
-
-
+      // Có file mới được chọn - chỉ gửi thumbnail field
       parsedData.thumbnail = selectedFile;
-      // Thử thêm với tên field khác nếu server yêu cầu
-      parsedData.image = selectedFile;
-      parsedData.file = selectedFile;
-
     } else if (type === 'edit' && removeThumbnail) {
       // Đang chỉnh sửa và muốn xóa thumbnail
       parsedData.remove_thumbnail = true;
@@ -287,22 +283,28 @@ const CourseModal = () => {
             )}
 
             {/* Hiển thị hình ảnh hiện tại khi chỉnh sửa */}
-            {type === 'edit' && selectedCourse && (selectedCourse.thumbnail_url || selectedCourse.thumbnail) && !selectedFileName && (
+            {type === 'edit' && selectedCourse && getThumbnailUrl(selectedCourse) && !selectedFileName && (
               <div className="mt-2">
                 <p className="text-sm text-gray-600 mb-2">Hình ảnh hiện tại:</p>
                 <div className="flex items-center space-x-2 mb-2">
-                  <img
+                  <ImageWithFallback
                     src={selectedCourse.thumbnail_url || selectedCourse.thumbnail}
                     alt="Current thumbnail"
                     className="w-32 h-24 object-cover rounded-lg border border-gray-200"
+                    fallbackSrc="https://via.placeholder.com/128x96?text=No+Image"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setRemoveThumbnail(true)}
-                    className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors duration-200"
-                  >
-                    Xóa ảnh
-                  </button>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-gray-500 mb-1">
+                      {getImageDisplayName(selectedCourse.thumbnail_url || selectedCourse.thumbnail)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setRemoveThumbnail(true)}
+                      className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors duration-200"
+                    >
+                      Xóa ảnh
+                    </button>
+                  </div>
                 </div>
                 <p className="text-xs text-gray-500">Chọn file mới để thay thế hoặc nhấn "Xóa ảnh" để xóa</p>
               </div>

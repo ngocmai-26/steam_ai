@@ -2,6 +2,8 @@ import React, { useCallback } from 'react';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import { setCurrentClass } from '../slices/courseSlice';
 import { openModal } from '../slices/modalSlice';
+import { getThumbnailUrl } from '../utils/imageUtils';
+import ImageWithFallback from './ImageWithFallback';
 
 const selectCourseDetail = state => ({
   currentCourse: state.course.currentCourse
@@ -48,12 +50,13 @@ const CourseDetail = () => {
         </div>
       </div>
 
-      {(currentCourse.thumbnail_url || currentCourse.thumbnail) && (
+      {getThumbnailUrl(currentCourse) && (
         <div className="mb-8">
-          <img 
-            src={currentCourse.thumbnail_url || currentCourse.thumbnail} 
+          <ImageWithFallback
+            src={currentCourse.thumbnail_url || currentCourse.thumbnail}
             alt={currentCourse.name}
             className="w-full h-48 object-cover rounded-lg"
+            fallbackSrc="https://via.placeholder.com/400x300?text=No+Image"
           />
         </div>
       )}

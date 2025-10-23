@@ -12,6 +12,8 @@ import {
   selectFacilitiesError,
   clearError 
 } from '../slices/facilitySlice';
+import { getThumbnailUrl } from '../utils/imageUtils';
+import ImageWithFallback from '../components/ImageWithFallback';
 import FacilityForm from '../components/FacilityForm';
 import Modal from '../components/Modal';
 import Loading from '../components/Loading';
@@ -344,10 +346,11 @@ const FacilityImageManager = ({ facility, onClose }) => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {images.map((image) => (
             <div key={image.id} className="relative group">
-              <img
+              <ImageWithFallback
                 src={image.image_url}
                 alt={facility.name}
                 className="w-full h-32 object-cover rounded-lg"
+                fallbackSrc="https://via.placeholder.com/400x300?text=No+Image"
               />
               <button
                 onClick={() => handleDeleteImage(image.id)}

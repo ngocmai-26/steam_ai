@@ -13,6 +13,7 @@ import StudentClassRegistration from './StudentClassRegistration';
 import ModuleManager from './ModuleManager';
 import NewsModal from './NewsModal';
 import { useDispatch as useReduxDispatch } from 'react-redux';
+import { getThumbnailUrl } from '../utils/imageUtils';
 import { fetchStudents } from '../slices/studentSlice';
 import { useSelector as useReduxSelector } from 'react-redux';
 
@@ -90,7 +91,28 @@ const ModalManager = () => {
             <h2 className="text-2xl font-bold mb-4">Chi tiết học viên</h2>
             <div className="flex gap-6">
               {student.avatar_url && (
-                <img src={student.avatar_url} alt="avatar" className="h-24 w-24 rounded-full object-cover" />
+                <img 
+                  src={getThumbnailUrl({ image_url: student.avatar_url }) || student.avatar_url} 
+                  alt="avatar" 
+                  className="h-24 w-24 rounded-full object-cover"
+                  onError={(e) => {
+                    // Try alternative Google Drive URL format if current one failed
+                    if (e.target.src.includes('drive.google.com/thumbnail')) {
+                      const fileIdMatch = e.target.src.match(/id=([a-zA-Z0-9-_]+)/);
+                      if (fileIdMatch && fileIdMatch[1]) {
+                        const fileId = fileIdMatch[1];
+                        const alternativeUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                        e.target.src = alternativeUrl;
+                        return;
+                      }
+                    }
+                    
+                    // If all else fails, use placeholder
+                    if (e.target.src !== 'https://via.placeholder.com/96x96?text=U') {
+                      e.target.src = 'https://via.placeholder.com/96x96?text=U';
+                    }
+                  }}
+                />
               )}
               <div>
                 <div><b>Mã học viên:</b> {student.identification_number}</div>

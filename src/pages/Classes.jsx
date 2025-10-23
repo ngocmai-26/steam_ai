@@ -5,6 +5,7 @@ import { fetchCoursesThunk } from '../thunks/courseThunks';
 import { openModal } from '../slices/modalSlice';
 import ModalManager from '../components/ModalManager';
 import Loading from '../components/Loading';
+import { getThumbnailUrl } from '../utils/imageUtils';
 
 const Classes = () => {
   const dispatch = useDispatch();
@@ -20,7 +21,7 @@ const Classes = () => {
 
   // Helper function to get image URL
   const getImageUrl = (classItem) => {
-    return classItem.thumbnail_url || classItem.thumbnail || classItem.image_url || 'https://via.placeholder.com/400x300?text=No+Image';
+    return getThumbnailUrl(classItem) || 'https://via.placeholder.com/400x300?text=No+Image';
   };
 
   // Helper function

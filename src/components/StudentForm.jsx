@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addStudentAsync, updateStudentAsync } from '../slices/studentSlice';
 import { closeModal, openModal } from '../slices/modalSlice';
+import { getThumbnailUrl } from '../utils/imageUtils';
+import StudentAvatar from './StudentAvatar';
 
 const StudentForm = ({ type, onSuccess }) => {
   const dispatch = useDispatch();
@@ -127,10 +129,11 @@ const StudentForm = ({ type, onSuccess }) => {
               className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-300 rounded-lg"
             />
             {formData.avatar_url && (
-              <img
+              <StudentAvatar
                 src={formData.avatar_url}
                 alt="Avatar preview"
                 className="mt-2 h-20 w-20 object-cover rounded-full mx-auto sm:mx-0 border border-gray-200 shadow"
+                fallbackSrc="https://via.placeholder.com/80x80?text=U"
               />
             )}
           </div>

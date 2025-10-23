@@ -2,7 +2,7 @@
  * API configuration constants
  */
 export const API = {
-    uri: "https://stem.bdu.edu.vn/steam/apis",
+    uri: "https://bdu-steam.onrender.com/steam/apis",
   };
   
   /**
@@ -12,7 +12,7 @@ export const API = {
   export const REFRESH_KEY_NAME = "refresh";
   export const INFO_KEY_NAME = "info";
   
-export const API_BASE_URL = 'https://stem.bdu.edu.vn/steam/apis';
+export const API_BASE_URL = 'https://bdu-steam.onrender.com/steam/apis';
 
 export const AUTH_ENDPOINTS = {
   SESSION: `${API_BASE_URL}/app/auth/session`,

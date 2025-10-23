@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import LessonGalleryService from '../services/LessonGalleryService';
+import { getThumbnailUrl } from '../utils/imageUtils';
+import ImageWithFallback from './ImageWithFallback';
 
 const LessonGalleryModal = ({
     isOpen,
@@ -207,13 +209,11 @@ const LessonGalleryModal = ({
                                     return imageUrls.map((imageUrl, urlIndex) => (
                                         <div key={`${image.id || index}-${urlIndex}`} className="relative group">
                                             <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                                                <img
+                                                <ImageWithFallback
                                                     src={imageUrl}
                                                     alt={`Ảnh ${index + 1}-${urlIndex + 1}`}
                                                     className="w-full h-full object-cover"
-                                                    onError={(e) => {
-                                                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7Oq86pz4HPhc+JPC90ZXh0Pjwvc3ZnPg==';
-                                                    }}
+                                                    fallbackSrc="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7Oq86pz4HPhc+JPC90ZXh0Pjwvc3ZnPg=="
                                                 />
                                             </div>
 
