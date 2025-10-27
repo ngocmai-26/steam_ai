@@ -17,7 +17,7 @@ export const clearAuthData = () => {
  */
 export const handleLogout = () => {
   clearAuthData();
-  window.location.href = '/login';
+  window.location.href = '/steam_ai/login';
 };
 
 /**

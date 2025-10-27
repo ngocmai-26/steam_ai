@@ -142,16 +142,18 @@ const Classes = () => {
                       </svg>
                     </button>
                   )}
-                  <button
-                    onClick={() => dispatch(openModal({ type: 'manageModules', data: { classId: classItem.id, className: classItem.name } }))}
-                    className="bg-green-500 text-white p-1 rounded hover:bg-green-600"
-                    title="Quản lý học phần"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a4 4 0 014-4h6" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h6m0 0v6m0-6l-8 8-4-4-6 6" />
-                    </svg>
-                  </button>
+                  {role === 'manager' && (
+                    <button
+                      onClick={() => dispatch(openModal({ type: 'manageModules', data: { classId: classItem.id, className: classItem.name } }))}
+                      className="bg-green-500 text-white p-1 rounded hover:bg-green-600"
+                      title="Quản lý học phần"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a4 4 0 014-4h6" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h6m0 0v6m0-6l-8 8-4-4-6 6" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="p-4">

@@ -28,14 +28,16 @@ const StudentForm = ({ type, onSuccess }) => {
   });
 
   const [avatarFile, setAvatarFile] = useState(null);
+  const [originalData, setOriginalData] = useState(null);
 
   useEffect(() => {
     if (isEditing && currentStudent) {
-      setFormData({
+      const formattedDate = currentStudent.date_of_birth ? currentStudent.date_of_birth.split('T')[0] : '';
+      const initialData = {
         identification_number: currentStudent.identification_number || '',
         first_name: currentStudent.first_name || '',
         last_name: currentStudent.last_name || '',
-        date_of_birth: currentStudent.date_of_birth || '',
+        date_of_birth: formattedDate,
         gender: currentStudent.gender || 'male',
         address: currentStudent.address || '',
         phone_number: currentStudent.phone_number || '',
@@ -44,25 +46,113 @@ const StudentForm = ({ type, onSuccess }) => {
         parent_phone: currentStudent.parent_phone || '',
         parent_email: currentStudent.parent_email || '',
         note: currentStudent.note || '',
-        avatar_url: currentStudent.avatar_url || '',
+        avatar_url: currentStudent.avatar_url || '', // Chỉ để hiển thị preview
         is_active: currentStudent.is_active ?? true
-      });
+      };
+      setFormData(initialData);
+      setOriginalData(initialData);
     }
   }, [isEditing, currentStudent]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      let submitData = { ...formData };
-      // Nếu có file avatar, gửi dưới dạng FormData
-      if (avatarFile) {
+      let submitData;
+      
+      // Nếu đang chỉnh sửa, chỉ gửi các field đã thay đổi
+      if (isEditing) {
+        const changedFields = {};
+        
+        // So sánh từng field với dữ liệu gốc
+        if (formData.identification_number !== originalData.identification_number) {
+          changedFields.identification_number = formData.identification_number;
+        }
+        if (formData.first_name !== originalData.first_name) {
+          changedFields.first_name = formData.first_name;
+        }
+        if (formData.last_name !== originalData.last_name) {
+          changedFields.last_name = formData.last_name;
+        }
+        if (formData.date_of_birth !== originalData.date_of_birth) {
+          changedFields.date_of_birth = formData.date_of_birth;
+        }
+        if (formData.gender !== originalData.gender) {
+          changedFields.gender = formData.gender;
+        }
+        if (formData.address !== originalData.address) {
+          changedFields.address = formData.address;
+        }
+        if (formData.phone_number !== originalData.phone_number) {
+          changedFields.phone_number = formData.phone_number;
+        }
+        if (formData.email !== originalData.email) {
+          changedFields.email = formData.email;
+        }
+        if (formData.parent_name !== originalData.parent_name) {
+          changedFields.parent_name = formData.parent_name;
+        }
+        if (formData.parent_phone !== originalData.parent_phone) {
+          changedFields.parent_phone = formData.parent_phone;
+        }
+        if (formData.parent_email !== originalData.parent_email) {
+          changedFields.parent_email = formData.parent_email;
+        }
+        if (formData.note !== originalData.note) {
+          changedFields.note = formData.note;
+        }
+        if (formData.is_active !== originalData.is_active) {
+          changedFields.is_active = formData.is_active;
+        }
+        
+        // Không có gì thay đổi và không có avatar mới
+        if (Object.keys(changedFields).length === 0 && !avatarFile) {
+          console.log('No changes detected');
+          dispatch(closeModal());
+          return;
+        }
+        
+        // Luôn gửi dưới dạng FormData (ngay cả khi không có avatar)
         const fd = new FormData();
-        Object.entries(formData).forEach(([key, value]) => {
+        // Chỉ append các field đã thay đổi
+        Object.entries(changedFields).forEach(([key, value]) => {
           fd.append(key, value);
         });
-        fd.append('avatar', avatarFile);
+        // Chỉ append avatar nếu có
+        if (avatarFile) {
+          fd.append('avatar', avatarFile);
+        }
         submitData = fd;
+        
+        console.log('Changed fields:', changedFields);
+        console.log('Submitting:', submitData);
+        
+      } else {
+        // Thêm mới: gửi toàn bộ dữ liệu
+        if (avatarFile) {
+          const fd = new FormData();
+          fd.append('identification_number', formData.identification_number);
+          fd.append('first_name', formData.first_name);
+          fd.append('last_name', formData.last_name);
+          fd.append('date_of_birth', formData.date_of_birth);
+          fd.append('gender', formData.gender);
+          fd.append('address', formData.address || '');
+          fd.append('phone_number', formData.phone_number || '');
+          fd.append('email', formData.email || '');
+          fd.append('parent_name', formData.parent_name);
+          fd.append('parent_phone', formData.parent_phone);
+          fd.append('parent_email', formData.parent_email);
+          fd.append('note', formData.note || '');
+          fd.append('is_active', formData.is_active);
+          fd.append('avatar', avatarFile);
+          submitData = fd;
+        } else {
+          const { avatar_url, ...cleanData } = formData;
+          submitData = cleanData;
+        }
       }
+      
+      console.log('Submitting data (type:', submitData instanceof FormData ? 'FormData' : 'JSON', '):', submitData);
+      
       if (isEditing) {
         await dispatch(updateStudentAsync({ id: currentStudent.id, studentData: submitData })).unwrap();
       } else {
@@ -88,15 +178,21 @@ const StudentForm = ({ type, onSuccess }) => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Kiểm tra kích thước file (tối đa 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Ảnh không được lớn hơn 2MB. Vui lòng chọn ảnh khác.');
+        e.target.value = ''; // Reset input
+        return;
+      }
+      
       setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({
-          ...prev,
-          avatar_url: reader.result
-        }));
-      };
-      reader.readAsDataURL(file);
+      
+      // Tạo preview URL cho display
+      const previewUrl = URL.createObjectURL(file);
+      setFormData(prev => ({
+        ...prev,
+        avatar_url: previewUrl // Chỉ để preview, không dùng cho submit
+      }));
     }
   };
 
@@ -229,6 +325,7 @@ const StudentForm = ({ type, onSuccess }) => {
               value={formData.parent_name}
               onChange={handleChange}
               className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
+              required
             />
           </div>
           {/* Số điện thoại phụ huynh */}
@@ -240,17 +337,19 @@ const StudentForm = ({ type, onSuccess }) => {
               value={formData.parent_phone}
               onChange={handleChange}
               className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
+              required
             />
           </div>
           {/* Email phụ huynh */}
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email phụ huynh</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email phụ huynh <span className="text-red-500">*</span></label>
             <input
               type="email"
               name="parent_email"
               value={formData.parent_email}
               onChange={handleChange}
               className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 px-3 py-2 bg-white"
+              required
             />
           </div>
           {/* Ghi chú */}

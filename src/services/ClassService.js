@@ -93,8 +93,10 @@ export class ClassService {
    */
   static async getStudentsByClassroom(classroomId) {
     try {
-      const response = await axios.get(`${CLASS_ENDPOINTS.CLASSES}/${classroomId}/students`);
-      return response.data?.data || response.data || [];
+      // Sử dụng API /classes/{id} để lấy thông tin lớp, trong đó có field students
+      const classResponse = await axios.get(`${CLASS_ENDPOINTS.CLASSES}/${classroomId}`);
+      const students = classResponse.data?.data?.students || classResponse.data?.students || [];
+      return students;
     } catch (error) {
       console.error('Error fetching students for classroom:', error);
       return [];

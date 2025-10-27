@@ -19,15 +19,16 @@ instance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Không set Content-Type cho FormData để browser tự set với boundary
-    // Chỉ set Content-Type cho JSON requests
-    if (!(config.data instanceof FormData) && !config.headers['Content-Type']) {
-      config.headers['Content-Type'] = 'application/json';
-    }
-
-    // Debug: Log headers for FormData requests
+    // Với FormData: Remove Content-Type để browser tự set với boundary
     if (config.data instanceof FormData) {
-      console.log('FormData request headers:', config.headers);
+      // Browser sẽ tự động set Content-Type với boundary cho FormData
+      delete config.headers['Content-Type'];
+      console.log('Sending FormData, Content-Type will be set by browser');
+    } else {
+      // Với JSON: Set Content-Type nếu chưa có
+      if (!config.headers['Content-Type']) {
+        config.headers['Content-Type'] = 'application/json';
+      }
     }
 
     return config;

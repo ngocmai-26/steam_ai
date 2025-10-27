@@ -4,12 +4,10 @@ import { fetchPendingRegistrations, updateRegistrationStatus } from '../slices/s
 import { setAlert } from '../slices/alertSlice';
 import Table from '../components/Table';
 import Loading from '../components/Loading';
-import Toast from '../components/Toast';
 
 const StudentRegistrations = () => {
   const dispatch = useDispatch();
   const { pendingRegistrations, loading, error } = useSelector((state) => state.studentRegistration);
-  const alert = useSelector((state) => state.alert);
 
   useEffect(() => {
     dispatch(fetchPendingRegistrations());
@@ -141,13 +139,6 @@ const StudentRegistrations = () => {
         <Table
           columns={columns}
           data={pendingRegistrations}
-        />
-      )}
-      {alert.msg && (
-        <Toast
-          type={alert.msg.type}
-          message={alert.msg.message}
-          onClose={() => dispatch(setAlert({ msg: null }))}
         />
       )}
     </div>

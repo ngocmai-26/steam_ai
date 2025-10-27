@@ -11,8 +11,21 @@ const Home = () => {
     return <Loading />;
   }
 
-  // Redirect all users to profile page
-  return <Navigate to="/profile" replace />;
+  // Redirect based on role to appropriate page
+  const role = user?.role?.toLowerCase();
+  let redirectPath = '/courses';
+  
+  if (role === 'manager') {
+    redirectPath = '/classes';
+  } else if (role === 'student') {
+    redirectPath = '/courses';
+  } else if (role === 'teacher') {
+    redirectPath = '/classes';
+  } else if (role === 'admin') {
+    redirectPath = '/classes';
+  }
+
+  return <Navigate to={redirectPath} replace />;
 };
 
 export default Home; 

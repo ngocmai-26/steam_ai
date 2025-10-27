@@ -88,6 +88,17 @@ class UserService {
       throw error;
     }
   }
+
+  // Cập nhật thông tin cá nhân (current user)
+  static async updateMyProfile(userData) {
+    try {
+      const response = await axios.put('/back-office/users/me', userData);
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  }
 }
 
 export default UserService; 

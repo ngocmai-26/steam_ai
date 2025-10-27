@@ -10,6 +10,8 @@ const API = MODULE_ENDPOINTS.MODULES;
 const ModuleManager = () => {
   const dispatch = useDispatch();
   const { data } = useSelector(state => state.modal);
+  const user = useSelector(state => state.auth.user);
+  const isManager = user?.role?.toLowerCase() === 'manager';
   const classId = data?.classId;
   const className = data?.className;
   const [modules, setModules] = useState([]);
@@ -88,101 +90,269 @@ const ModuleManager = () => {
   const handleRemoveLessonName = (idx) => setForm(f => ({ ...f, lesson_names: f.lesson_names.filter((_, i) => i !== idx) }));
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Quản lý học phần của lớp: <span className="text-indigo-600">{className}</span></h2>
-        <button onClick={() => dispatch(closeModal())} className="text-gray-500 hover:text-red-500">Đóng</button>
-      </div>
-      {error && <div className="text-red-500 mb-2">{error}</div>}
-      <div className="mb-4">
-        <button onClick={() => setShowForm(f => !f)} className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-          {showForm ? 'Ẩn form thêm học phần' : 'Thêm học phần'}
+    <div className="p-6 max-w-4xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Quản lý học phần</h2>
+          <p className="text-gray-600 mt-1">Lớp: <span className="text-indigo-600 font-semibold">{className}</span></p>
+        </div>
+        <button 
+          onClick={() => dispatch(closeModal())} 
+          className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Đóng
         </button>
       </div>
-      {showForm && (
-        <form onSubmit={handleAddModule} className="bg-gray-50 p-4 rounded mb-6 space-y-3">
-          <div>
-            <label className="block font-medium mb-1">Tên học phần *</label>
-            <input type="text" className="w-full border rounded px-2 py-1" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-          </div>
-          <div>
-            <label className="block font-medium mb-1">Mô tả</label>
-            <textarea className="w-full border rounded px-2 py-1" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-          </div>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block font-medium mb-1">Số thứ tự *</label>
-              <input type="number" min={1} className="w-full border rounded px-2 py-1" required value={form.sequence_number} onChange={e => setForm(f => ({ ...f, sequence_number: e.target.value }))} />
+      
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
             </div>
-            <div className="flex-1">
-              <label className="block font-medium mb-1">Tổng số bài học *</label>
-              <input type="number" min={1} className="w-full border rounded px-2 py-1" required value={form.total_lessons} onChange={e => {
-                const val = parseInt(e.target.value) || 1;
-                setForm(f => {
-                  let lesson_names = f.lesson_names.slice(0, val);
-                  while (lesson_names.length < val) lesson_names.push('');
-                  return { ...f, total_lessons: val, lesson_names };
-                });
-              }} />
+            <div className="ml-3">
+              <p className="text-sm font-medium">{error}</p>
             </div>
           </div>
-          <div>
-            <label className="block font-medium mb-1">Tên các bài học</label>
-            {form.lesson_names.map((name, idx) => (
-              <div key={idx} className="flex gap-2 mb-1">
-                <input type="text" className="flex-1 border rounded px-2 py-1" value={name} onChange={e => handleLessonNameChange(idx, e.target.value)} />
-                <button type="button" onClick={() => handleRemoveLessonName(idx)} className="text-red-500">Xóa</button>
-              </div>
-            ))}
-            <button type="button" onClick={handleAddLessonName} className="text-indigo-600 mt-1">+ Thêm tên bài học</button>
-          </div>
-          <button type="submit" disabled={submitting} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mt-2">
-            {submitting ? 'Đang lưu...' : 'Lưu học phần'}
+        </div>
+      )}
+
+      {isManager && (
+        <div className="mb-6">
+          <button 
+            onClick={() => setShowForm(f => !f)} 
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md hover:shadow-lg"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            {showForm ? 'Ẩn form' : 'Thêm học phần'}
           </button>
-        </form>
+        </div>
       )}
-      <h3 className="text-lg font-semibold mb-2">Danh sách học phần</h3>
-      {loading ? <div>Đang tải...</div> : (
-        <table className="w-full border rounded">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-2">STT</th>
-              <th className="p-2">Tên học phần</th>
-              <th className="p-2">Mô tả</th>
-              <th className="p-2">Tổng số bài học</th>
-              <th className="p-2">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {modules.length === 0 ? (
-              <tr><td colSpan={5} className="text-center text-gray-500 py-4">Chưa có học phần nào</td></tr>
-            ) : modules.map((m, idx) => (
-              <tr key={m.id} className="border-t">
-                <td className="p-2 text-center">{m.sequence_number}</td>
-                <td className="p-2 font-medium">{m.name}</td>
-                <td className="p-2">{m.description}</td>
-                <td className="p-2 text-center">{m.total_lessons}</td>
-                <td className="p-2 flex gap-2">
-                  <ButtonAction color="indigo" onClick={() => handleView(m)}>
-                    <span className="sm:hidden">
-                      {/* icon info */}
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
+
+      {showForm && (
+        <div className="bg-white border-2 border-gray-200 rounded-xl shadow-lg p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Thông tin học phần mới
+          </h3>
+          <form onSubmit={handleAddModule} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tên học phần <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                  required 
+                  value={form.name} 
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="Nhập tên học phần..."
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Mô tả</label>
+                <textarea 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none" 
+                  rows="3"
+                  value={form.description} 
+                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                  placeholder="Nhập mô tả học phần..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Số thứ tự <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="number" 
+                  min={1} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                  required 
+                  value={form.sequence_number} 
+                  onChange={e => setForm(f => ({ ...f, sequence_number: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tổng số bài học <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="number" 
+                  min={1} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                  required 
+                  value={form.total_lessons} 
+                  onChange={e => {
+                    const val = parseInt(e.target.value) || 1;
+                    setForm(f => {
+                      let lesson_names = f.lesson_names.slice(0, val);
+                      while (lesson_names.length < val) lesson_names.push('');
+                      return { ...f, total_lessons: val, lesson_names };
+                    });
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-3">Tên các bài học</label>
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                {form.lesson_names.map((name, idx) => (
+                  <div key={idx} className="flex gap-2">
+                    <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium">
+                      {idx + 1}
                     </span>
-                    <span className="hidden sm:inline">Chi tiết</span>
-                  </ButtonAction>
-                  <ButtonAction color="red" onClick={() => handleDelete(m.id)}>
-                    <span className="sm:hidden">
-                      {/* icon trash */}
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </span>
-                    <span className="hidden sm:inline">Xóa</span>
-                  </ButtonAction>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    <input 
+                      type="text" 
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                      value={name} 
+                      onChange={e => handleLessonNameChange(idx, e.target.value)}
+                      placeholder={`Bài ${idx + 1}...`}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => handleRemoveLessonName(idx)} 
+                      className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Xóa bài học này"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button 
+                type="button" 
+                onClick={handleAddLessonName} 
+                className="mt-3 flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Thêm bài học
+              </button>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false);
+                  setForm({ name: '', description: '', sequence_number: 1, total_lessons: 1, lesson_names: [''] });
+                }}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Hủy
+              </button>
+              <button 
+                type="submit" 
+                disabled={submitting} 
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang lưu...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Lưu học phần
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
+
+      <div className="bg-white rounded-lg shadow border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Danh sách học phần</h3>
+        </div>
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="text-center py-8">
+              <svg className="animate-spin h-8 w-8 text-indigo-600 mx-auto" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p className="text-gray-500 mt-2">Đang tải...</p>
+            </div>
+          ) : modules.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              Chưa có học phần nào. Hãy thêm học phần mới.
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên học phần</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mô tả</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng số bài học</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {modules.map((m) => (
+                  <tr key={m.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-800 rounded-full font-semibold text-sm">
+                        {m.sequence_number}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{m.name}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-500 max-w-xs truncate">{m.description || 'Không có mô tả'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        {m.total_lessons} bài
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                      <div className="flex justify-center gap-2">
+                        <ButtonAction color="indigo" onClick={() => handleView(m)} title="Chi tiết">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </ButtonAction>
+                        {isManager && (
+                          <ButtonAction color="red" onClick={() => handleDelete(m.id)} title="Xóa">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </ButtonAction>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

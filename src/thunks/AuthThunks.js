@@ -114,6 +114,7 @@ export const checkAuthThunk = () => (dispatch) => {
   const userInfo = getUserInfo();
 
   if (token && userInfo) {
+    // Silently authenticate user without showing alert
     dispatch(setUser(userInfo));
     dispatch(setCurrentUserInfo(userInfo)); // Lưu user_info khi check auth
   } else {

@@ -1,13 +1,18 @@
-import React, { useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useEffect, useRef } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { clearAlert } from '../slices/alertSlice';
 
 const Toast = () => {
+  const dispatch = useDispatch();
   const alert = useSelector((state) => state.alert.msg);
+  const previousAlertRef = useRef(null);
 
   useEffect(() => {
-    if (alert && alert.message) {
+    if (alert && alert.message && previousAlertRef.current !== alert.message) {
+      previousAlertRef.current = alert.message;
+      
       switch (alert.type) {
         case 'success':
           toast.success(alert.message);
@@ -25,8 +30,14 @@ const Toast = () => {
           toast(alert.message);
           break;
       }
+      
+      // Clear alert after showing
+      setTimeout(() => {
+        dispatch(clearAlert());
+        previousAlertRef.current = null;
+      }, 50);
     }
-  }, [alert]);
+  }, [alert, dispatch]);
 
   return (
     <ToastContainer
@@ -44,4 +55,4 @@ const Toast = () => {
   );
 };
 
-export default Toast; 
+export default Toast;

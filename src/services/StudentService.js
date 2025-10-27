@@ -21,22 +21,14 @@ export class StudentService {
 
   static async createStudent(studentData) {
     // studentData có thể là FormData nếu có avatar
-    const isFormData = studentData instanceof FormData;
-    const response = await axios.post(BASE_URL, studentData, {
-      headers: {
-        'Content-Type': isFormData ? 'multipart/form-data' : 'application/json',
-      },
-    });
+    // Không set Content-Type, để axiosConfig interceptor xử lý
+    const response = await axios.post(BASE_URL, studentData);
     return response.data.data;
   }
 
   static async updateStudent(id, studentData) {
-    const isFormData = studentData instanceof FormData;
-    const response = await axios.put(`${BASE_URL}/${id}`, studentData, {
-      headers: {
-        'Content-Type': isFormData ? 'multipart/form-data' : 'application/json',
-      },
-    });
+    // Không set Content-Type, để axiosConfig interceptor xử lý
+    const response = await axios.put(`${BASE_URL}/${id}`, studentData);
     return response.data.data;
   }
 

@@ -200,14 +200,15 @@ const ClassForm = () => {
                             required
                         >
                             <option value="">Chọn giáo viên</option>
-                            {teachers.map(t => (
-                                <option key={t.id} value={String(t.id)}>
-                                    {[
-                                        typeof t.name === 'string' ? t.name : null,
-                                        typeof t.email === 'string' ? t.email : null
-                                    ].filter(Boolean).join(' - ') || String(t.id)}
-                                </option>
-                            ))}
+                            {teachers.map(t => {
+                                // Ưu tiên hiển thị name, nếu không có thì hiển thị email
+                                const displayName = t.name || t.email || String(t.id);
+                                return (
+                                    <option key={t.id} value={String(t.id)}>
+                                        {displayName}
+                                    </option>
+                                );
+                            })}
                         </select>
                     </div>
                     <div>
@@ -219,14 +220,15 @@ const ClassForm = () => {
                             className="mt-1 block w-full rounded-lg px-3 py-2 shadow-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-100 border border-gray-400"
                         >
                             <option value="">Chọn trợ giảng</option>
-                            {teachers.map(t => (
-                                <option key={t.id} value={String(t.id)}>
-                                    {[
-                                        typeof t.name === 'string' ? t.name : null,
-                                        typeof t.email === 'string' ? t.email : null
-                                    ].filter(Boolean).join(' - ') || String(t.id)}
-                                </option>
-                            ))}
+                            {teachers.map(t => {
+                                // Ưu tiên hiển thị name, nếu không có thì hiển thị email
+                                const displayName = t.name || t.email || String(t.id);
+                                return (
+                                    <option key={t.id} value={String(t.id)}>
+                                        {displayName}
+                                    </option>
+                                );
+                            })}
                         </select>
                     </div>
                 </div>

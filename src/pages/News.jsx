@@ -4,14 +4,13 @@ import { fetchNews, createNews, updateNews, deleteNews } from '../slices/newsSli
 import { setAlert } from '../slices/alertSlice';
 import Table from '../components/Table';
 import Loading from '../components/Loading';
-import Toast from '../components/Toast';
+import ImageWithFallback from '../components/ImageWithFallback';
 import { openModal } from '../slices/modalSlice';
 import NewsService from '../services/NewsService';
 
 const News = () => {
   const dispatch = useDispatch();
   const { newsList, loading, error } = useSelector((state) => state.news);
-  const alert = useSelector((state) => state.alert);
 
   useEffect(() => {
     console.log('News component - useEffect called');
@@ -102,7 +101,7 @@ const News = () => {
       render: (item) => (
         <div className="w-16 h-16">
           {item.image ? (
-            <img
+            <ImageWithFallback
               src={item.image}
               alt={item.title}
               className="w-full h-full object-cover rounded"
@@ -187,14 +186,6 @@ const News = () => {
         <Table
           columns={columns}
           data={newsList}
-        />
-      )}
-
-      {alert.msg && (
-        <Toast
-          type={alert.msg.type}
-          message={alert.msg.message}
-          onClose={() => dispatch(setAlert({ msg: null }))}
         />
       )}
     </div>

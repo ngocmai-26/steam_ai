@@ -232,8 +232,8 @@ const Navbar = () => {
 
           {/* Tablet Menu */}
           <div className="hidden md:flex lg:hidden md:items-center md:space-x-1">
-            {/* Hiển thị menu groups và single items */}
-            {filteredMenuGroups.slice(0, 2).map((group) => (
+            {/* Hiển thị menu groups - không slice để hiển thị đầy đủ */}
+            {filteredMenuGroups.map((group) => (
               <div key={group.label} className="relative dropdown-menu">
                 <button
                   onClick={() => setOpenDropdown(openDropdown === group.label ? null : group.label)}
@@ -241,9 +241,10 @@ const Navbar = () => {
                     ? 'bg-indigo-100 text-indigo-700'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
+                  title={group.label}
                 >
                   <span className="mr-1">{group.icon}</span>
-                  {group.label}
+                  <span className="hidden md:inline">{group.label}</span>
                   <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
